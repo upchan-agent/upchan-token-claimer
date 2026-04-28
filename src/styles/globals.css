@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════
+   🆙chan Token Claimer — Design System
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ─── Brand ─── */
+  --c-brand: #d94691;
+  --c-brand-light: #f06292;
+  --c-brand-mid: #ec4899;
+  --c-accent: #a855f7;
+  --c-bg: #f8f0ff;
+  --c-surface: #ffffff;
+  --c-surface-secondary: #faf5ff;
+  --c-text: #1a1a2e;
+  --c-text-secondary: #4a4a6a;
+  --c-text-muted: #8888aa;
+  --c-text-link: #d94691;
+  --c-border: #e8e0f0;
+  --c-success: #10b981;
+  --c-error: #ef4444;
+
+  /* ─── Radius ─── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-xl: 20px;
+
+  /* ─── Space ─── */
+  --space-sm: 8px;
+  --space-md: 14px;
+  --space-lg: 20px;
+
+  /* ─── Layout ─── */
+  --min-width-app: 320px;
+  --content-max-width: 480px;
+  --content-padding: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  min-width: var(--min-width-app);
+}
+
+body {
+  font-family: var(--font-noto-sans-jp), 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', system-ui, sans-serif;
+  background: var(--c-bg);
+  background-image: radial-gradient(circle at 20% 20%, rgba(217,70,145,0.04) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(168,85,247,0.04) 0%, transparent 50%);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Title font (Zen Maru Gothic) ─── */
+.font-title {
+  font-family: var(--font-zen-maru), var(--font-noto-sans-jp), sans-serif;
+}
+h1, h2, h3 {
+  font-family: var(--font-zen-maru), var(--font-noto-sans-jp), sans-serif;
+}
+
+/* ─── Card ─── */
+.card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  transition: box-shadow 0.2s ease;
+}
+.card:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ─── Progress ─── */
+.progress-track {
+  height: 5px;
+  background: #ede9fe;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c-brand-light), var(--c-brand));
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Button ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  line-height: 1;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--c-brand-light), var(--c-brand));
+  color: white;
+  box-shadow: 0 2px 8px rgba(217,70,145,0.2);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(217,70,145,0.4);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-secondary {
+  background: var(--c-surface-secondary);
+  color: var(--c-text-secondary);
+  border: 1px solid var(--c-border);
+}
+
+/* ─── Animations ─── */
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim { animation: float-in 0.4s ease both; }
+.anim-d1 { animation-delay: 0.05s; }
+.anim-d2 { animation-delay: 0.12s; }
+.anim-d3 { animation-delay: 0.19s; }
+.anim-d4 { animation-delay: 0.26s; }
+
+@keyframes pulse {
+  0%,100% { box-shadow: 0 2px 8px rgba(217,70,145,0.2); }
+  50% { box-shadow: 0 2px 20px rgba(217,70,145,0.35), 0 0 30px rgba(168,85,247,0.15); }
+}
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+.scrollable {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd6fe transparent;
+}
+.scrollable::-webkit-scrollbar { width: 4px; }
+.scrollable::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 2px; }

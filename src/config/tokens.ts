@@ -50,6 +50,20 @@ export function getGateInfo(address: `0x${string}`): GateInfo {
 // ─── Tokens ───
 export const TOKENS: TokenConfig[] = [
   {
+    id: 'genesis-old',
+    name: '',
+    symbol: '',
+    proxy: '0xf1d14e985cf4d7e95ba95e47b24dac47a811ceef',
+    targetProfile: '0x0000000000000000000000000000000000000000',
+    supplyCap: 1,
+    image: '',
+    description: '',
+    chainId: 4201,
+    mintGate: '0x0000000000000000000000000000000000000000',
+    enabled: true,
+    metadataUri: '',
+  },
+  {
     id: 'genesis-testnet',
     name: '',
     symbol: '',
@@ -63,18 +77,32 @@ export const TOKENS: TokenConfig[] = [
     enabled: true,
     metadataUri: 'ipfs://QmTkzLEWs9P4Eh8r5m4NeWeVAL7wgopgtsVCkYFx7BZrvj',
   },
+  {
+    id: 'mainnet-phlametoken-test',
+    name: '',
+    symbol: '',
+    proxy: '0xe8731f5d5002e2261175afb970517d4c5dad028c',
+    targetProfile: '0x0000000000000000000000000000000000000000',
+    supplyCap: 100,
+    image: '',
+    description: '',
+    chainId: 42,
+    mintGate: '0x0000000000000000000000000000000000000000',
+    enabled: true,
+    metadataUri: 'ipfs://bafkreicedjs5moioc5umsnhcuoln3zybxtecggw4aaofby3ijk2gigq2om',  
+  }
 ];
 
 // ─── Chains ───
 export const CHAINS: Record<number, { name: string; rpc: string; explorer: string }> = {
   4201: {
     name: 'LUKSO Testnet',
-    rpc: 'https://rpc.testnet.lukso.network',
+    rpc: 'https://4201.rpc.thirdweb.com/f20713774ede91090d43daf75243e8ca',
     explorer: 'https://explorer.execution.testnet.lukso.network',
   },
   42: {
     name: 'LUKSO',
-    rpc: 'https://rpc.mainnet.lukso.network',
+    rpc: 'https://42.rpc.thirdweb.com/f20713774ede91090d43daf75243e8ca',
     explorer: 'https://explorer.execution.mainnet.lukso.network',
   },
 };
@@ -88,6 +116,12 @@ export const LSP26_ABI = [
   'function isFollowing(address follower, address addr) view returns (bool)',
   'function followerCount(address addr) view returns (uint256)',
   'function followingCount(address addr) view returns (uint256)',
+];
+
+export const GATE_ABI = [
+  'function gateType() view returns (string)',
+  'function check(address user) view returns (bool, string, string)',
+  'function canMint(address user) view returns (bool)',
 ];
 
 export const UP_ABI = [

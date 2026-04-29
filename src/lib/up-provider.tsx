@@ -12,12 +12,13 @@ interface UPContextValue {
   isConnecting: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
+  setChainId: (id: number) => void;
 }
 
 const Ctx = createContext<UPContextValue>({
   provider: null, accounts: [], chainId: null,
   isConnected: false, isDetecting: true, isConnecting: false,
-  connect: async () => {}, disconnect: () => {},
+  connect: async () => {}, disconnect: () => {}, setChainId: () => {},
 });
 
 export function UPProvider({ children }: { children: ReactNode }) {
@@ -72,6 +73,10 @@ export function UPProvider({ children }: { children: ReactNode }) {
             const a = await luksoProvider.request({ method: 'eth_accounts' });
             if (a?.length) setAccounts(a as `0x${string}`[]);
           } catch {}
+          try {
+            const c = await luksoProvider.request({ method: 'eth_chainId' });
+            if (c) setChainId(Number(c));
+          } catch {}
           luksoProvider.on('accountsChanged', (a: string[]) => setAccounts(a as `0x${string}`[]));
           luksoProvider.on('chainChanged', (id: number) => setChainId(id));
           return;
@@ -85,6 +90,11 @@ export function UPProvider({ children }: { children: ReactNode }) {
             const a = await w.ethereum.request({ method: 'eth_accounts' });
             if (a?.length) setAccounts(a as `0x${string}`[]);
           } catch {}
+          try {
+            const c = await w.ethereum.request({ method: 'eth_chainId' });
+            if (c) setChainId(Number(c));
+          } catch {}
+          w.ethereum.on('chainChanged', (id: string) => setChainId(Number(id)));
           return;
         }
 
@@ -111,7 +121,10 @@ export function UPProvider({ children }: { children: ReactNode }) {
     try {
       const a = await p.request({ method: 'eth_requestAccounts' });
       setAccounts(a as `0x${string}`[]);
-    } catch {} finally {
+      const c = await p.request({ method: 'eth_chainId' });
+      console.log('[UP] connect eth_chainId raw:', c, 'parsed:', c ? Number(c) : null);
+      if (c) setChainId(Number(c));
+    } catch (e) { console.log('[UP] connect error:', e); } finally {
       setIsConnecting(false);
     }
   }, []);
@@ -122,7 +135,7 @@ export function UPProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{
       provider, accounts, chainId,
       isConnected: accounts.length > 0,
-      isDetecting, isConnecting, connect, disconnect,
+      isDetecting, isConnecting, connect, disconnect, setChainId,
     }}>
       {children}
     </Ctx.Provider>

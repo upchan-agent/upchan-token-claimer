@@ -3,7 +3,12 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
-import { TokenConfig, SELECTORS, LSP26_ADDRESS, UP_ABI, CHAINS, getGateInfo } from '@/config/tokens';
+import { TokenConfig, SELECTORS, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS, getGateInfo } from '@/config/tokens';
+
+const ENVIO_URLS: Record<number, string> = {
+  42: 'https://envio.lukso-mainnet.universal.tech/v1/graphql',
+  4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
+};
 
 export interface TokenStatus {
   totalSupply: number;
@@ -62,25 +67,50 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
   let userBalance = 0;
   let isFollowing = false;
 
-  if (userAddress) {
+  if (userAddress && token.targetProfile) {
+    // Envio follow check (fast, no RPC)
+    const envioFollow = await (async () => {
+      const envioUrl = ENVIO_URLS[token.chainId];
+      if (!envioUrl) return null;
+      try {
+        const q = `{Follow(where:{follower_id:{_eq:"${userAddress.toLowerCase()}"} followee_id:{_eq:"${token.targetProfile.toLowerCase()}"}}){id}}`;
+        const r = await fetch(envioUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query:q}), signal:AbortSignal.timeout(4000) });
+        if (!r.ok) return null;
+        const d = await r.json();
+        return (d?.data?.Follow || []).length > 0;
+      } catch { return null; }
+    })();
+
     const [bal, fol] = await Promise.all([
       c.balanceOf(userAddress).catch(() => 0),
-      token.targetProfile
-        ? p.call({
-            to: LSP26_ADDRESS,
-            data: SELECTORS.isFollowing +
-              userAddress.slice(2).padStart(64, '0') +
-              token.targetProfile.slice(2).padStart(64, '0'),
-          }).then(r => r.endsWith('1')).catch(() => false)
-        : Promise.resolve(false),
+      p.call({
+        to: LSP26_ADDRESS,
+        data: SELECTORS.isFollowing +
+          userAddress.slice(2).padStart(64, '0') +
+          token.targetProfile.slice(2).padStart(64, '0'),
+      }).then(r => r.endsWith('1')).catch(() => false),
     ]);
     userBalance = Number(bal);
-    isFollowing = fol;
+    isFollowing = envioFollow !== null ? envioFollow : fol;
   }
 
   const mintGate = ethers.getAddress(mg) as `0x${string}`;
   const supplyCap = Number(tsc) || token.supplyCap || Infinity;
   const gateInfo = getGateInfo(mintGate);
+
+  /* ─── IGate canMint check ───
+     If mintGate points to an IGate-compliant contract, use canMint().
+     Fallback: use isFollowing (LSP26 follow, backward compat).         */
+  let canMintViaGate = true;
+  if (userAddress && mintGate !== DEFAULT_GATE) {
+    try {
+      const gateContract = new ethers.Contract(mintGate, GATE_ABI, p);
+      canMintViaGate = await gateContract.canMint(userAddress);
+    } catch {
+      // IGate未対応 → isFollowing でフォールバック
+      canMintViaGate = isFollowing;
+    }
+  }
 
   return {
     totalSupply: Number(ts),
@@ -95,7 +125,7 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
     isFollowing,
     mintGate,
     gateInfo,
-    canMint: !!im && isFollowing && userBalance === 0 && Number(ts) < supplyCap,
+    canMint: !!im && canMintViaGate && userBalance === 0 && Number(ts) < supplyCap,
   };
 }
 

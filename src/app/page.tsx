@@ -14,28 +14,49 @@ import { HoldersCard } from '@/components/HoldersCard';
 
 export default function HomePage() {
   const params = useSearchParams();
-  const [id, setId] = useState(params.get('token') || TOKENS[0]?.id);
-  const { accounts, chainId, isConnected } = useUpProvider();
-
-  const token = useMemo(() => TOKENS.find(t => t.id === id) || TOKENS[0], [id]);
-  const user = accounts[0] || null;
-  const st = useTokenStatus(token, user);
-  const refresh = useCallback(() => st.refetch(), [st]);
+  const [id, setId] = useState<string | null>(params.get('token') || TOKENS[0]?.id || null);
+  const { accounts, chainId, isConnected, setChainId } = useUpProvider();
 
   const chains = useMemo(() => {
     if (!isConnected || !chainId) return [...new Set(TOKENS.map(t => t.chainId))];
-    return [chainId];
+    const numericChainId = typeof chainId === 'string' ? parseInt(chainId, 10) : chainId;
+    const chainTokens = TOKENS.filter(t => t.chainId === numericChainId);
+    return chainTokens.length > 0 ? [numericChainId] : [];
   }, [isConnected, chainId]);
 
-  const chain = CHAINS[token?.chainId] || CHAINS[4201];
+  const enabledTokens = useMemo(() =>
+    TOKENS.filter(t => chains.includes(t.chainId)), [chains]);
 
-  if (!token) {
+  const displayToken = useMemo(() => {
+    if (id && enabledTokens.some(t => t.id === id)) return TOKENS.find(t => t.id === id) || null;
+    return enabledTokens[0] || null;
+  }, [id, enabledTokens]);
+
+  const user = accounts[0] || null;
+  const st = useTokenStatus(displayToken, user);
+  const refresh = useCallback(() => st.refetch(), [st]);
+
+  /* Use wallet's actual chain for display if available, else fallback to token config */
+  const chain = displayToken
+    ? (CHAINS[displayToken.chainId] || CHAINS[4201])
+    : (chainId ? (CHAINS[Number(chainId)] || CHAINS[4201]) : CHAINS[4201]);
+
+  if (!displayToken) {
     return (
       <div className="app-shell">
         <Header />
-        <div className="centered">
-          <p className="text-micro">Not found</p>
-        </div>
+        <footer className="app-footer">
+          Made with ♥ by
+          <a href="https://universalprofile.cloud/0xbcA4eEBea76926c49C64AB86A527CC833eFa3B2D" target="_blank" className="link footer-icon">🆙chan</a>
+          <span className="footer-divider">|</span>
+          <a href="https://x.com/UPchan_lyx" target="_blank" className="link footer-icon">
+            <svg viewBox="0 0 24 24" width={9} height={9} fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+          </a>
+          {chainId && (
+            <span onClick={() => setChainId(chainId === 42 ? 4201 : 42)}
+              style={{ cursor: 'pointer', fontSize: 9, color: 'var(--c-text-muted)', marginLeft: 4 }} title="Toggle network">[{chainId}]</span>
+          )}
+        </footer>
       </div>
     );
   }
@@ -48,21 +69,21 @@ export default function HomePage() {
       <div className="scrollable" style={{ flex: 1 }}>
         <div className="section-content card-stack">
           {/* Token selector */}
-          {TOKENS.length > 1 && (
-            <TokenSelector tokens={TOKENS} selected={id} onSelect={setId} enabledChainIds={chains} />
+          {enabledTokens.length > 1 && (
+            <TokenSelector tokens={enabledTokens} selected={id || ''} onSelect={(newId) => setId(newId)} enabledChainIds={chains} />
           )}
 
           {/* Token identity card */}
-          <TokenCard token={token} />
+          <TokenCard token={displayToken} />
 
           {/* Details + Properties */}
-          <StatusCard token={token} status={st} chain={chain} onRefresh={refresh} />
+          <StatusCard token={displayToken} status={st} chain={chain} onRefresh={refresh} />
 
           {/* Gate + Mint */}
-          <ActionCard token={token} status={st} chain={chain} onRefetch={refresh} />
+          <ActionCard token={displayToken} status={st} chain={chain} onRefetch={refresh} />
 
           {/* Holders */}
-          <HoldersCard token={token} />
+          <HoldersCard token={displayToken} />
         </div>
       </div>
 
@@ -78,6 +99,12 @@ export default function HomePage() {
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
           </svg>
         </a>
+        {chainId && (
+          <span onClick={() => setChainId(chainId === 42 ? 4201 : 42)}
+            style={{ cursor: 'pointer', fontSize: 9, color: 'var(--c-text-muted)', marginLeft: 4 }} title="Toggle network">
+            [{chainId}]
+          </span>
+        )}
       </footer>
     </div>
   );

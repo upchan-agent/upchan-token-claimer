@@ -29,9 +29,9 @@
 
   /* ─── Text (exact DESIGN.md) ─── */
   --c-text: #1d1d1f;                       /* Near Black - primary */
-  --c-text-secondary: rgba(0, 0, 0, 0.8); /* Black 80% <secondary> */
-  --c-text-tertiary: rgba(0, 0, 0, 0.48); /* Black 48% <tertiary> */
-  --c-text-muted: rgba(0, 0, 0, 0.48);    /* Alias: tertiary */
+  --c-text-secondary: rgba(0, 0, 0, 0.56); /* Black 56% — Apple standard */
+  --c-text-tertiary: rgba(0, 0, 0, 0.32);  /* Black 32% — Apple standard */
+  --c-text-muted: rgba(0, 0, 0, 0.32);     /* Alias: tertiary */
   --c-border: rgba(0, 0, 0, 0.04);
 
   /* ─── Semantic (Apple System Colors) ─── */
@@ -39,6 +39,7 @@
   --c-error: #ff453a;
 
   /* ─── Radius (DESIGN.md scale) ─── */
+  --radius-xs: 2px;
   --radius-sm: 5px;
   --radius-md: 8px;
   --radius-xl: 12px;
@@ -55,12 +56,12 @@
   --space-xs: 8px;    /* 小 */
   --space-sm: 12px;   /* 中 */
   --space-md: 16px;   /* 標準 */
-  --space-lg: 20px;   /* 大 */
-  --space-xl: 28px;   /* 最大 */
+  --space-lg: 12px;   /* 大 */
+  --space-xl: 16px;   /* 最大 */
 
   /* ─── Layout ─── */
   --content-max-width: 480px;
-  --content-padding: 16px;
+  --content-padding: 12px;
   --min-width-app: 320px;
 }
 
@@ -102,6 +103,10 @@ body {
   background: var(--c-canvas);
 }
 
+.header-logo {
+  font-size: 16px;
+}
+
 .app-header {
   height: 44px;   /* Apple iOS nav bar height */
   flex-shrink: 0;
@@ -119,13 +124,14 @@ body {
 }
 
 .app-footer {
-  height: 24px;
+  height: 20px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
   font-size: 10px;
+  line-height: 1;
   color: var(--c-text-muted);
   border-top: 1px solid var(--c-border);
 }
@@ -133,6 +139,7 @@ body {
 .footer-divider {
   color: var(--c-text-muted);
   font-size: 10px;
+  line-height: inherit;
 }
 
 .footer-icon {
@@ -141,7 +148,8 @@ body {
 }
 
 .scrollable {
-  overflow-y: auto;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
   flex: 1;
@@ -150,7 +158,7 @@ body {
 .scrollable::-webkit-scrollbar { width: 4px; }
 .scrollable::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.08);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .section-content {
@@ -216,41 +224,18 @@ body {
   color: var(--c-text);
 }
 
-/* Body (17px, 400, -0.374px) — explicit override of <body> default */
-.text-body {
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1.47;
-  letter-spacing: -0.022em;
-  color: var(--c-text);
-}
-
-/* Link text style (for .link elements that need text sizing) */
-.text-link {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.43;
-  letter-spacing: -0.016em;
-  color: var(--c-accent);
-}
-
 /* Section Label (11px uppercase, used inside cards) */
 .section-label {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.29;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--c-text-tertiary);
+  color: var(--c-text);
   margin-bottom: var(--space-xs);
 }
 
 /* Mono font */
-.font-mono {
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-  letter-spacing: -0.01em;
-}
-
 .text-center { text-align: center; }
 
 /* ═══════════════════════════════════════════════════════
@@ -276,9 +261,17 @@ body {
   border-bottom: none;
 }
 
-.card-footer {
-  margin-top: var(--space-sm);
-  text-align: center;
+/* Card block: fixed min-height for stable layout */
+.card-block--sm {
+  min-height: 40px;
+}
+
+.card-block--md {
+  min-height: 100px;
+}
+
+.card-block--lg {
+  min-height: 130px;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -290,6 +283,8 @@ body {
 .link {
   color: var(--c-accent);
   text-decoration: none;
+  line-height: inherit;
+  letter-spacing: inherit;
   transition: opacity 0.2s;
 }
 
@@ -324,7 +319,7 @@ body {
   border-radius: var(--radius-md);
   font-size: 17px;
   font-weight: 400;
-  padding: var(--space-xs) 15px;
+  padding: var(--space-xs) var(--space-md);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -338,7 +333,7 @@ body {
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 400;
-  padding: var(--space-xs) 15px;
+  padding: var(--space-xs) var(--space-md);
 }
 
 /* Large CTA (replaces .btn-full + .btn-primary coupling) */
@@ -363,6 +358,13 @@ body {
   background: rgba(0, 0, 0, 0.04);
 }
 
+/* Header-specific compact button */
+.btn-header {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+}
+
 /* Pill segmented control (token selector) */
 .pill-group {
   display: flex;
@@ -370,6 +372,29 @@ body {
   padding: var(--space-2xs);
   border-radius: var(--radius-pill);
   background: #e8e8ed;
+}
+
+/* Pill tab (inside .pill-group) */
+.pill-item {
+  flex: 1;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  background: transparent;
+  color: var(--c-text-tertiary);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pill-item--selected {
+  background: var(--c-accent);
+  color: #fff;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -392,15 +417,19 @@ body {
   font-weight: 400;
   line-height: 1.29;
   letter-spacing: -0.016em;
-  color: var(--c-text-secondary);
+  color: var(--c-text);
 }
 
 .data-value {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.29;
   letter-spacing: -0.016em;
-  color: var(--c-text);
+  color: var(--c-text-secondary);
+}
+
+.data-value.link {
+  color: var(--c-accent);
 }
 
 /* Transaction hash display */
@@ -412,20 +441,6 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-}
-
-/* Contract address link (replaces copy button) */
-.data-cell-link {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.29;
-  letter-spacing: -0.016em;
-  color: var(--c-accent);
-  text-decoration: none;
-}
-
-.data-cell-link:hover {
-  opacity: 0.8;
 }
 
 /* Property row value: icon + text */
@@ -493,11 +508,15 @@ body {
 .status-message-title {
   margin: 0;
   text-align: center;
+  font-size: 14px;
+  line-height: 1.29;
 }
 
 .status-message-caption {
   margin: 0;
   text-align: center;
+  font-size: 14px;
+  line-height: 1.29;
 }
 
 .status-message--claimed .status-message-title {
@@ -531,14 +550,14 @@ body {
 .progress-track {
   height: var(--space-2xs);
   background: rgba(0, 0, 0, 0.06);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: var(--c-accent);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -563,6 +582,8 @@ body {
   text-align: center;
   padding: var(--space-md) 0;
   color: var(--c-text-tertiary);
+  line-height: inherit;
+  letter-spacing: inherit;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -584,7 +605,7 @@ body {
   overflow: hidden;
   position: relative;
   background: rgba(0, 0, 0, 0.03);
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .token-img-wrap.loaded:hover {
@@ -604,7 +625,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: opacity 0.3s;
+  transition: opacity 0.2s;
 }
 
 .token-symbol {
@@ -625,7 +646,9 @@ body {
   padding: var(--space-xs) 10px;
   border-radius: var(--radius-md);
   text-decoration: none;
-  transition: background 0.15s ease;
+  line-height: inherit;
+  letter-spacing: inherit;
+  transition: background 0.2s ease;
 }
 
 .hoverable-row:hover {
@@ -665,6 +688,7 @@ body {
 
 .holders-scroll {
   max-height: 280px;
+  min-height: 100px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
@@ -673,7 +697,7 @@ body {
 .holders-scroll::-webkit-scrollbar { width: 4px; }
 .holders-scroll::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.08);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* ─── Animations ─── */

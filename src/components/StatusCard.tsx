@@ -48,27 +48,29 @@ export function StatusCard({ token, status, chain }: Props) {
       ? 'Minting Open'
       : 'Paused';
 
-  /* All properties always shown — card size never changes per contract */
+  /* All properties always shown — card size never changes per contract
+     Loading state shows all-neutral dashes for visual consistency */
+  const load = status.isLoading;
   const properties: PropRow[] = [
     {
       label: 'Soulbound',
-      value: status.isSoulbound ? 'yes' : 'no',
-      display: status.isSoulbound ? 'Yes' : 'No',
+      value: load ? 'none' : (status.isSoulbound ? 'yes' : 'no'),
+      display: load ? '-' : (status.isSoulbound ? 'Yes' : 'No'),
     },
     {
       label: 'Revokable',
-      value: status.revokable ? 'yes' : 'no',
-      display: status.revokable ? 'Yes' : 'No',
+      value: load ? 'none' : (status.revokable ? 'yes' : 'no'),
+      display: load ? '-' : (status.revokable ? 'Yes' : 'No'),
     },
     {
       label: 'Balance Cap',
-      value: status.balanceCap > 0 ? 'yes' : 'none',
-      display: status.balanceCap > 0 ? String(status.balanceCap) : '—',
+      value: load ? 'none' : (status.balanceCap > 0 ? 'yes' : 'none'),
+      display: load ? '-' : (status.balanceCap > 0 ? String(status.balanceCap) : '-'),
     },
     {
       label: 'Cap Status',
-      value: status.isSupplyCapFixed ? 'yes' : 'no',
-      display: status.isSupplyCapFixed ? 'Fixed' : 'Flexible',
+      value: load ? 'none' : (status.isSupplyCapFixed ? 'yes' : 'none'),
+      display: load ? '-' : (status.isSupplyCapFixed ? 'Fixed' : 'Flexible'),
     },
   ];
 
@@ -83,9 +85,9 @@ export function StatusCard({ token, status, chain }: Props) {
           href={`https://universalprofile.cloud/${token.proxy}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="data-cell-link font-mono"
+          className="data-value link"
         >
-          {token.proxy.slice(0, 8)}…{token.proxy.slice(-6)} ↗
+          {token.proxy.slice(0, 8)}...{token.proxy.slice(-6)} ↗
         </a>
       </div>
 
@@ -95,21 +97,21 @@ export function StatusCard({ token, status, chain }: Props) {
         <span className="data-value">{chain.name}</span>
       </div>
 
-      {/* Supply */}
+      {/* Status */}
       <div className="data-row">
+        <span className="data-label">Status</span>
+        <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
+      </div>
+
+      {/* Supply */}
+      <div className="data-row" style={{ border: 'none' }}>
         <span className="data-label">Supply</span>
         <span className="data-value">
           {status.totalSupply} / {token.supplyCap}
         </span>
       </div>
-      <div className="progress-track" style={{ marginTop: 'var(--space-2xs)', marginBottom: 2 }}>
+      <div className="progress-track" style={{ margin: 'var(--space-2xs) 0' }}>
         <div className="progress-fill" style={{ width: `${pct}%` }} />
-      </div>
-
-      {/* Status */}
-      <div className="data-row" style={{ border: 'none', paddingTop: 'var(--space-xs)' }}>
-        <span className="data-label">Status</span>
-        <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
       </div>
 
       {/* Properties — all 4 rows fixed, icon + value display */}
@@ -118,7 +120,7 @@ export function StatusCard({ token, status, chain }: Props) {
         {properties.map((p) => (
           <div className="data-row" key={p.label}>
             <span className="data-label">{p.label}</span>
-            <span className="prop-value">
+            <span className="data-value prop-value">
               <PropIcon value={p.value} />
               <span>{p.display}</span>
             </span>

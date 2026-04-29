@@ -9,7 +9,7 @@ export function Header() {
   return (
     <header className="app-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 18 }}>🆙</span>
+        <span className="header-logo">🆙</span>
         <span className="text-caption-bold">Token Claimer</span>
       </div>
 
@@ -19,7 +19,7 @@ export function Header() {
         ) : isConnected ? (
           <div className="connected-badge">
             <span className="connected-dot" />
-            <span className="font-mono text-caption-bold">
+            <span className="text-caption-bold">
               {addr?.slice(0, 6)}…{addr?.slice(-4)}
             </span>
             <button onClick={disconnect} className="btn-icon">
@@ -30,8 +30,7 @@ export function Header() {
           <button
             onClick={connect}
             disabled={isConnecting}
-            className="btn btn-primary"
-            style={{ fontSize: 13, fontWeight: 600, padding: '6px 14px' }}
+            className="btn btn-primary btn-header"
           >
             {isConnecting ? '...' : 'Connect Wallet'}
           </button>

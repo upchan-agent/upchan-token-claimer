@@ -20,6 +20,7 @@ export interface TokenStatus {
   gateInfo: ReturnType<typeof getGateInfo>;
   canMint: boolean;
   isLoading: boolean;
+  isFetching: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
@@ -107,6 +108,7 @@ export function useTokenStatus(
     queryFn: () => fetchTokenStatus(token!, userAddress),
     enabled: !!token,
     staleTime: 15_000,
+    placeholderData: (prev) => prev,
   });
 
   const defaults = {
@@ -123,6 +125,7 @@ export function useTokenStatus(
     ...defaults,
     ...query.data,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     error: query.error?.message ?? null,
     refetch: () => query.refetch().then(() => {}),
   } as TokenStatus;

@@ -29,33 +29,55 @@ export default function HomePage() {
 
   const chain = CHAINS[token?.chainId] || CHAINS[4201];
 
-  return (
-    <div style={{ height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <Header />
-      <div className="scrollable" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, padding: `0 var(--content-padding) 10px`, maxWidth: 'var(--content-max-width)', width: '100%', margin: '0 auto' }}>
-        {!token ? (
-          <div className="card" style={{ padding: 20, textAlign: 'center' }}><p style={{ color: 'var(--c-text-muted)' }}>Not found</p></div>
-        ) : (
-          <>
-            <TokenSelector tokens={TOKENS} selected={id} onSelect={setId} enabledChainIds={chains} />
-            <TokenCard token={token} />
-            <StatusCard token={token} status={st} onRefresh={refresh} />
-            <ActionCard token={token} status={st} chain={chain} onRefetch={refresh} />
-            <HoldersCard token={token} />
-          </>
-        )}
+  if (!token) {
+    return (
+      <div className="app-shell">
+        <Header />
+        <div className="centered">
+          <p className="text-micro">Not found</p>
+        </div>
       </div>
-      <footer style={{
-        height: 40, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 6, fontSize: 12, color: 'var(--c-text-muted)',
-        borderTop: '1px solid var(--c-border)',
-        background: 'var(--c-surface)',
-      }}>
-        <span>Made with ♥ by</span>
-        <a href="https://x.com/UPchan_lyx" target="_blank" style={{ color: 'var(--c-text)', fontWeight: 700, textDecoration: 'none' }}>🆙chan</a>
-        <span>|</span>
-        <a href="https://x.com/UPchan_lyx" target="_blank" style={{ color: 'var(--c-text-link)', textDecoration: 'none', fontWeight: 600 }}>𝕏</a>
+    );
+  }
+
+  return (
+    <div className="app-shell">
+      <Header />
+
+      {/* Scrollable body */}
+      <div className="scrollable" style={{ flex: 1 }}>
+        <div className="section-content card-stack">
+          {/* Token selector */}
+          {TOKENS.length > 1 && (
+            <TokenSelector tokens={TOKENS} selected={id} onSelect={setId} enabledChainIds={chains} />
+          )}
+
+          {/* Token identity card */}
+          <TokenCard token={token} />
+
+          {/* Details + Properties */}
+          <StatusCard token={token} status={st} chain={chain} onRefresh={refresh} />
+
+          {/* Gate + Mint */}
+          <ActionCard token={token} status={st} chain={chain} onRefetch={refresh} />
+
+          {/* Holders */}
+          <HoldersCard token={token} />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        Made with ♥ by
+        <a href="https://universalprofile.cloud/0xbcA4eEBea76926c49C64AB86A527CC833eFa3B2D" target="_blank" className="link footer-icon">
+          🆙chan
+        </a>
+        <span className="footer-divider">|</span>
+        <a href="https://x.com/UPchan_lyx" target="_blank" className="link footer-icon">
+          <svg viewBox="0 0 24 24" width={9} height={9} fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
+        </a>
       </footer>
     </div>
   );

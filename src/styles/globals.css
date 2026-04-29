@@ -1,43 +1,74 @@
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════
    🆙chan Token Claimer — Design System
-   ═══════════════════════════════════════════════ */
+   DESIGN.md Strict Compliance · Apple-inspired
+   ═══════════════════════════════════════════════════════
+   命名規則：
+     .text-*   → Typography
+     .btn-*    → Buttons
+     .card-*   → Card
+     .data-*   → Data Display
+     .status-* → Status & Feedback
+     .token-*  → Token-specific
+     .app-*    → Layout / Shell
+   ═══════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════
+   1. 🎨 Design Tokens — CSS Custom Properties
+   ═══════════════════════════════════════════════════════ */
 
 :root {
-  /* ─── Brand ─── */
-  --c-brand: #d94691;
-  --c-brand-light: #f06292;
-  --c-brand-mid: #ec4899;
-  --c-accent: #a855f7;
-  --c-bg: #f8f0ff;
-  --c-surface: #ffffff;
-  --c-surface-secondary: #faf5ff;
-  --c-text: #1a1a2e;
-  --c-text-secondary: #4a4a6a;
-  --c-text-muted: #8888aa;
-  --c-text-link: #d94691;
-  --c-border: #e8e0f0;
-  --c-success: #10b981;
-  --c-error: #ef4444;
+  /* ─── Accent: Apple Blue (single chromatic color) ─── */
+  --c-accent: #0071e3;
+  --c-accent-hover: #0077ed;
+  --c-accent-subtle: rgba(0, 113, 227, 0.1);
+  --c-accent-dark: #2997ff;
 
-  /* ─── Radius ─── */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-xl: 20px;
+  /* ─── Apple binary palette ─── */
+  --c-canvas: #f5f5f7;         /* Light Gray - page background */
+  --c-surface: #ffffff;        /* White - card backgrounds */
 
-  /* ─── Space ─── */
-  --space-sm: 8px;
-  --space-md: 14px;
-  --space-lg: 20px;
+  /* ─── Text (exact DESIGN.md) ─── */
+  --c-text: #1d1d1f;                       /* Near Black - primary */
+  --c-text-secondary: rgba(0, 0, 0, 0.8); /* Black 80% <secondary> */
+  --c-text-tertiary: rgba(0, 0, 0, 0.48); /* Black 48% <tertiary> */
+  --c-text-muted: rgba(0, 0, 0, 0.48);    /* Alias: tertiary */
+  --c-border: rgba(0, 0, 0, 0.04);
+
+  /* ─── Semantic (Apple System Colors) ─── */
+  --c-success: #30d158;
+  --c-error: #ff453a;
+
+  /* ─── Radius (DESIGN.md scale) ─── */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 980px;
+
+  /* ─── Shadows ─── */
+  --shadow-card: rgba(0, 0, 0, 0.08) 0px 2px 12px 0px;
+
+  /* ─── Space: 8px-based scale (DESIGN.md inspired) ───
+       Scale: 2, 4, 8, 12, 16, 20, 28, ...
+       All UI spacing must use these variables.        ─── */
+  --space-3xs: 2px;   /* 最小 gap */
+  --space-2xs: 4px;   /* 超小 */
+  --space-xs: 8px;    /* 小 */
+  --space-sm: 12px;   /* 中 */
+  --space-md: 16px;   /* 標準 */
+  --space-lg: 20px;   /* 大 */
+  --space-xl: 28px;   /* 最大 */
 
   /* ─── Layout ─── */
-  --min-width-app: 320px;
   --content-max-width: 480px;
-  --content-padding: 14px;
+  --content-padding: 16px;
+  --min-width-app: 320px;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ═══════════════════════════════════════════════════════
+   2. 🔄 Reset & Base
+   ═══════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; }
 
 html, body {
   height: 100%;
@@ -47,104 +78,613 @@ html, body {
 }
 
 body {
-  font-family: var(--font-noto-sans-jp), 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', system-ui, sans-serif;
-  background: var(--c-bg);
-  background-image: radial-gradient(circle at 20% 20%, rgba(217,70,145,0.04) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 80%, rgba(168,85,247,0.04) 0%, transparent 50%);
+  font-family: var(--font-zen-maru), var(--font-noto-sans-jp),
+               'Apple Color Emoji', 'Segoe UI Emoji', system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: -0.022em;   /* -0.374px ÷ 17px */
+  background: var(--c-canvas);
   color: var(--c-text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Title font (Zen Maru Gothic) ─── */
-.font-title {
-  font-family: var(--font-zen-maru), var(--font-noto-sans-jp), sans-serif;
-}
-h1, h2, h3 {
-  font-family: var(--font-zen-maru), var(--font-noto-sans-jp), sans-serif;
-}
+/* ═══════════════════════════════════════════════════════
+   3. 🏗️ Layout — Page shell & containers
+   ═══════════════════════════════════════════════════════ */
 
-/* ─── Card ─── */
-.card {
-  background: var(--c-surface);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--c-border);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-  transition: box-shadow 0.2s ease;
-}
-.card:hover {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-
-/* ─── Progress ─── */
-.progress-track {
-  height: 5px;
-  background: #ede9fe;
-  border-radius: 3px;
+.app-shell {
+  height: 100dvh;
   overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--c-brand-light), var(--c-brand));
-  border-radius: 3px;
-  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  background: var(--c-canvas);
 }
 
-/* ─── Button ─── */
-.btn {
-  display: inline-flex;
+.app-header {
+  height: 44px;   /* Apple iOS nav bar height */
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--content-padding);
+  z-index: 100;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.app-footer {
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-  line-height: 1;
-}
-.btn:active { transform: scale(0.97); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--c-brand-light), var(--c-brand));
-  color: white;
-  box-shadow: 0 2px 8px rgba(217,70,145,0.2);
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 20px rgba(217,70,145,0.4);
-  transform: translateY(-2px) scale(1.02);
+  gap: var(--space-xs);
+  font-size: 10px;
+  color: var(--c-text-muted);
+  border-top: 1px solid var(--c-border);
 }
 
-.btn-secondary {
-  background: var(--c-surface-secondary);
-  color: var(--c-text-secondary);
-  border: 1px solid var(--c-border);
+.footer-divider {
+  color: var(--c-text-muted);
+  font-size: 10px;
 }
 
-/* ─── Animations ─── */
-@keyframes float-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.footer-icon {
+  display: inline-flex;
+  align-items: center;
 }
-.anim { animation: float-in 0.4s ease both; }
-.anim-d1 { animation-delay: 0.05s; }
-.anim-d2 { animation-delay: 0.12s; }
-.anim-d3 { animation-delay: 0.19s; }
-.anim-d4 { animation-delay: 0.26s; }
-
-@keyframes pulse {
-  0%,100% { box-shadow: 0 2px 8px rgba(217,70,145,0.2); }
-  50% { box-shadow: 0 2px 20px rgba(217,70,145,0.35), 0 0 30px rgba(168,85,247,0.15); }
-}
-.pulse { animation: pulse 2s ease-in-out infinite; }
 
 .scrollable {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #ddd6fe transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+  flex: 1;
 }
+
 .scrollable::-webkit-scrollbar { width: 4px; }
-.scrollable::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 2px; }
+.scrollable::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+.section-content {
+  max-width: var(--content-max-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--content-padding);
+}
+
+.centered {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════
+   4. 📝 Typography — Text hierarchy (DESIGN.md §3)
+   ═══════════════════════════════════════════════════════ */
+
+/* Card Title (21px, 700, +0.231px) */
+.text-card-title {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.19;
+  letter-spacing: 0.011em;
+  margin: 0;
+}
+
+/* Caption (14px, 400, -0.224px) */
+.text-caption {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-text-secondary);
+}
+
+/* Caption Bold (14px, 600, -0.224px) */
+.text-caption-bold {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-text);
+}
+
+/* Micro (12px, 400, -0.12px) */
+.text-micro {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+  color: var(--c-text-tertiary);
+}
+
+/* Micro Bold (12px, 600, -0.12px) */
+.text-micro-bold {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+  color: var(--c-text);
+}
+
+/* Body (17px, 400, -0.374px) — explicit override of <body> default */
+.text-body {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  color: var(--c-text);
+}
+
+/* Link text style (for .link elements that need text sizing) */
+.text-link {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  letter-spacing: -0.016em;
+  color: var(--c-accent);
+}
+
+/* Section Label (11px uppercase, used inside cards) */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-tertiary);
+  margin-bottom: var(--space-xs);
+}
+
+/* Mono font */
+.font-mono {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  letter-spacing: -0.01em;
+}
+
+.text-center { text-align: center; }
+
+/* ═══════════════════════════════════════════════════════
+   5. 🃏 Card — Container, sections & footer
+   ═══════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card-section {
+  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.card-section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.card-footer {
+  margin-top: var(--space-sm);
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════
+   6. 🔗 Links — Unified link styling
+   ═══════════════════════════════════════════════════════
+   Was: .card-link / .footer-link / .tx-hash-link (merged)
+   ═══════════════════════════════════════════════════════ */
+
+.link {
+  color: var(--c-accent);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.link:hover {
+  opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════════
+   7. 🔘 Buttons (DESIGN.md §4)
+   ═══════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  border: none;
+  font-family: inherit;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Primary Blue CTA (DESIGN.md exact: 8px radius, 17px, weight 400) */
+.btn-primary {
+  background: var(--c-accent);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  font-size: 17px;
+  font-weight: 400;
+  padding: var(--space-xs) 15px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--c-accent-hover);
+}
+
+/* Secondary button (subtle gray) */
+.btn-secondary {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--c-text-secondary);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 400;
+  padding: var(--space-xs) 15px;
+}
+
+/* Large CTA (replaces .btn-full + .btn-primary coupling) */
+.btn-lg {
+  width: 100%;
+  padding: var(--space-sm) var(--space-xl);
+}
+
+/* Icon button (small, transparent) */
+.btn-icon {
+  padding: var(--space-3xs) var(--space-xs);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  color: var(--c-text-tertiary);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.btn-icon:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Pill segmented control (token selector) */
+.pill-group {
+  display: flex;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  border-radius: var(--radius-pill);
+  background: #e8e8ed;
+}
+
+/* ═══════════════════════════════════════════════════════
+   8. 📊 Data Display — Key-value rows & meta info
+   ═══════════════════════════════════════════════════════ */
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2xs) 0;
+}
+
+.data-row:not(:last-child) {
+  border-bottom: 1px solid var(--c-border);
+}
+
+.data-label {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-text-secondary);
+}
+
+.data-value {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-text);
+}
+
+/* Transaction hash display */
+.tx-hash {
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) 10px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Contract address link (replaces copy button) */
+.data-cell-link {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-accent);
+  text-decoration: none;
+}
+
+.data-cell-link:hover {
+  opacity: 0.8;
+}
+
+/* Property row value: icon + text */
+.prop-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.prop-icon--yes {
+  color: var(--c-success);
+}
+
+.prop-icon--no {
+  color: var(--c-error);
+}
+
+.prop-icon--none {
+  color: var(--c-text-tertiary);
+}
+
+/* ═══════════════════════════════════════════════════════
+   9. 🎯 Status & Feedback — Pills, messages, progress
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Status Pill ─── */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.status-pill--open {
+  background: rgba(48, 209, 88, 0.1);
+  color: var(--c-success);
+}
+
+.status-pill--closed {
+  background: rgba(255, 69, 58, 0.1);
+  color: var(--c-error);
+}
+
+.status-pill--paused {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--c-text-tertiary);
+}
+
+/* ─── Status Message (unified state display) ─── */
+
+.status-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) 0;
+  gap: var(--space-3xs);
+}
+
+.status-message-title {
+  margin: 0;
+  text-align: center;
+}
+
+.status-message-caption {
+  margin: 0;
+  text-align: center;
+}
+
+.status-message--claimed .status-message-title {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: -0.022em;
+  color: var(--c-success);
+}
+
+.status-message--soldout .status-message-title,
+.status-message--closed .status-message-title,
+.status-message--unavailable .status-message-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-text);
+}
+
+.status-message--not-following .status-message-caption {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+  color: var(--c-text-tertiary);
+}
+
+/* ─── Progress Bar ─── */
+
+.progress-track {
+  height: var(--space-2xs);
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Error Box ─── */
+
+.error-box {
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) 10px;
+  background: rgba(255, 69, 58, 0.08);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--c-error);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Empty State ─── */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-md) 0;
+  color: var(--c-text-tertiary);
+}
+
+/* ═══════════════════════════════════════════════════════
+   10. 🖼️ Token-specific — Token Card components
+   ═══════════════════════════════════════════════════════ */
+
+.token-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-lg);
+}
+
+.token-img-wrap {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+  background: rgba(0, 0, 0, 0.03);
+  transition: transform 0.3s ease;
+}
+
+.token-img-wrap.loaded:hover {
+  transform: scale(1.03);
+}
+
+.token-img-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.token-img-loaded {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.3s;
+}
+
+.token-symbol {
+  margin: var(--space-2xs) 0 0;
+  color: var(--c-text-tertiary);
+}
+
+/* ═══════════════════════════════════════════════════════
+   11. ✨ Interaction — Hover, animations, badges
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Hoverable Row (CSS-only :hover for list rows) ─── */
+
+.hoverable-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 10px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.hoverable-row:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* ─── Connected Wallet Badge ─── */
+
+.connected-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: rgba(0, 0, 0, 0.03);
+  padding: var(--space-2xs) 10px;
+  border-radius: var(--radius-md);
+}
+
+.connected-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-success);
+}
+
+/* ─── Card Grid (card stack inside scrollable) ─── */
+
+.card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-xl);
+}
+
+/* ─── Holders Card — scrollable list ─── */
+
+.holders-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+}
+
+.holders-scroll::-webkit-scrollbar { width: 4px; }
+.holders-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim { animation: float-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-d1 { animation-delay: 0.05s; }
+.anim-d2 { animation-delay: 0.12s; }
+.anim-d3 { animation-delay: 0.19s; }
+.anim-d4 { animation-delay: 0.26s; }

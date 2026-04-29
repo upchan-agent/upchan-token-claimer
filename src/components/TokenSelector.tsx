@@ -13,31 +13,24 @@ export function TokenSelector({
   if (tokens.length <= 1) return null;
 
   return (
-    <div className="glass" style={{
-      display: 'flex',
-      gap: 4,
-      padding: 4,
-      flexShrink: 0,
-    }}>
+    <div className="pill-group">
       {tokens
         .filter(t => enabledChainIds.includes(t.chainId))
         .map(t => (
           <button
             key={t.id}
             onClick={() => onSelect(t.id)}
-            className="btn"
             style={{
               flex: 1,
-              padding: '8px 14px',
-              fontSize: 13,
-              fontWeight: 600,
-              background: selected === t.id
-                ? 'linear-gradient(135deg, var(--c-brand-light), var(--c-brand))'
-                : 'transparent',
-              color: selected === t.id ? 'white' : 'var(--c-text-muted)',
-              borderRadius: 'var(--radius-lg)',
+              padding: 'var(--space-xs) 18px',
+              fontSize: 14, fontWeight: 600,
+              lineHeight: 1.29, letterSpacing: '-0.016em',
+              background: selected === t.id ? 'var(--c-accent)' : 'transparent',
+              color: selected === t.id ? '#fff' : 'var(--c-text-tertiary)',
+              border: 'none', borderRadius: 'var(--radius-pill)',
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all 0.2s ease',
               whiteSpace: 'nowrap',
-              minHeight: 36,
             }}
           >
             {t.name}

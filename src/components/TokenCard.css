@@ -1,0 +1,107 @@
+/* ═══════════════════════════════════════════
+   TokenCard — Card media with rare card effects
+   ═══════════════════════════════════════════
+   Loading state: transparent, no animations.
+   Loaded state: all effects activate.      */
+
+.card-token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40;
+  min-height: 224px;
+}
+
+/* ─── Base: loading — nothing visible ─── */
+
+.card-token-media {
+  width: 160px;
+  height: 160px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+/* ─── Loaded: all effects activate ─── */
+
+.card-token-media--loaded {
+  animation: premium-float 4s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(255, 182, 193, 0.3), 0 0 50px rgba(190, 170, 230, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Radiance aura (purple-blue magical glow) */
+.card-token-media--loaded::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: calc(var(--radius-xl) + 8px);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 182, 193, 0.25) 0%,    /* pastel pink */
+    rgba(190, 170, 230, 0.15) 25%,   /* pastel lavender */
+    rgba(170, 230, 200, 0.08) 50%,   /* pastel mint */
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+  animation: radiance-pulse 2s ease-in-out infinite;
+}
+
+@keyframes radiance-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+/* Shimmer sweep (one-direction: sweep right → fade → reset) */
+.card-token-media--loaded::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 15%,
+    rgba(255, 255, 255, 0.3) 38%,
+    rgba(255, 255, 255, 0.5) 45%,
+    rgba(255, 255, 255, 0.3) 52%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: shimmer-sweep 2.5s ease-out infinite;
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-120%) skewX(-12deg); opacity: 1; }
+  35% { transform: translateX(250%) skewX(-12deg); opacity: 1; }
+  40% { transform: translateX(250%) skewX(-12deg); opacity: 0; }
+  100% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+}
+
+/* Hover: supercharged */
+.card-token-media--loaded:hover {
+  box-shadow: 0 0 60px rgba(255, 182, 193, 0.5), 0 0 80px rgba(190, 170, 230, 0.3), 0 0 120px rgba(255, 255, 255, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-token-media--loaded:hover::after {
+  animation-duration: 1.5s;
+  opacity: 1 !important;
+}
+
+.card-token-media--loaded:hover::before {
+  animation-duration: 1s;
+}
+
+@keyframes premium-float {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-6px); }
+  50% { transform: translateY(-10px); }
+  75% { transform: translateY(-4px); }
+}
+
+.card-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

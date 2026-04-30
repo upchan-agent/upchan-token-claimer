@@ -13,15 +13,17 @@ export function HoldersCard({ token }: { token: TokenConfig }) {
 
   return (
     <div className="card anim anim-d4">
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', marginBottom: 12,
-      }}>
-        <span className="section-label"><EmojiText>🐱 Holders 🐱</EmojiText></span>
-        <span className="text-micro-bold">{holders.length}</span>
-      </div>
+      <div className="card-section">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span className="section-label">
+            <EmojiText>🐱 Holders 🐱</EmojiText>
+          </span>
+          <span className="section-label">
+            {holders.length}
+          </span>
+        </div>
 
-      <div className="holder-list">
+        <div className="holder-list">
         {error ? (
           <div className="error-box">{error}</div>
         ) : !isLoading && holders.length === 0 ? (
@@ -83,6 +85,7 @@ export function HoldersCard({ token }: { token: TokenConfig }) {
             ))}
           </>
         )}
+      </div>
       </div>
     </div>
   );

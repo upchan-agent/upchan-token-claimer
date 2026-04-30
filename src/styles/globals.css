@@ -55,11 +55,11 @@
        All UI spacing must use these variables.        ─── */
   --space-3xs: 2px;   /* 最小 gap */
   --space-2xs: 4px;   /* 超小 */
-  --space-xs: 8px;    /* 小 */
-  --space-sm: 12px;   /* 中 */
-  --space-md: 16px;   /* 標準 */
-  --space-lg: 12px;   /* 大 */
-  --space-xl: 16px;   /* 最大 */
+  --space-xs: 6px;    /* 小 */
+  --space-sm: 8px;   /* 中 */
+  --space-md: 12px;   /* 標準 */
+  --space-lg: 16px;   /* 大 */
+  --space-xl: 24px;   /* 最大 */
 
   /* ─── Layout ─── */
   --content-max-width: 480px;
@@ -261,30 +261,9 @@ body {
 }
 
 /* Token identity card: image left, name right */
-.card-token {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.card-token-media {
-  width: 100px;
-  height: 100px;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  position: relative;
-  flex-shrink: 0;
-  background: transparent;
-}
-
-.card-token-media:hover {
-  transform: scale(1.03);
-  transition: transform 0.2s ease;
-}
-
 .card-section {
-  padding-bottom: var(--space-md);
-  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-sm);
   border-bottom: 1px solid var(--c-border);
 }
 
@@ -292,6 +271,32 @@ body {
   padding-bottom: 0;
   margin-bottom: 0;
   border-bottom: none;
+}
+
+/* Centered card-section content (e.g. Eligibility, Claim) */
+.card-section--center {
+  text-align: center;
+}
+
+/* Keep section labels left-aligned within centered sections */
+.card-section--center .section-label {
+  text-align: left;
+}
+
+/* Vertically center the content below the label in hero sections */
+.card-section--center.card-block--md,
+.card-section--center.card-block--lg {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-section--center.card-block--md > :last-child,
+.card-section--center.card-block--lg > :last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Card block: fixed min-height for stable layout */
@@ -313,23 +318,6 @@ body {
 .card-media:hover {
   transform: scale(1.03);
   transition: transform 0.2s ease;
-}
-
-.card-media-skeleton {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg,
-    var(--c-canvas) 25%,
-    rgba(0,0,0,0.06) 50%,
-    var(--c-canvas) 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
 }
 
 .card-media-img {
@@ -468,9 +456,7 @@ body {
   padding: var(--space-2xs) 0;
 }
 
-.data-row:not(:last-child) {
-  border-bottom: 1px solid var(--c-border);
-}
+/* data-row borders removed for cleaner spacing — card-section handles section separation */
 
 .data-label {
   grid-column: 1;

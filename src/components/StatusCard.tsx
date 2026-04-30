@@ -80,45 +80,47 @@ export function StatusCard({ token, status, chain }: Props) {
 
   return (
     <div className="card anim anim-d2">
-      <span className="section-label"><EmojiText>🍭 Details 🍭</EmojiText></span>
+      <div className="card-section">
+        <span className="section-label"><EmojiText>🍭 Details 🍭</EmojiText></span>
 
-      {/* Contract — link to universaleverything.io */}
-      <div className="data-row">
-        <span className="data-label">Contract</span>
-        <a
-          href={assetUrl(ethers.getAddress(token.proxy), token.chainId)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="data-value link"
-        >
-          {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)} ↗
-        </a>
+        {/* Contract */}
+        <div className="data-row">
+          <span className="data-label">Contract</span>
+          <a
+            href={assetUrl(ethers.getAddress(token.proxy), token.chainId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="data-value link"
+          >
+            {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)} ↗
+          </a>
+        </div>
+
+        {/* Network */}
+        <div className="data-row">
+          <span className="data-label">Network</span>
+          <span className="data-value">{chain.name}</span>
+        </div>
+
+        {/* Status */}
+        <div className="data-row">
+          <span className="data-label">Status</span>
+          <span className="data-value">
+            <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
+          </span>
+        </div>
+
+        {/* Supply */}
+        <div className="data-row data-row--supply">
+          <span className="data-label">Supply</span>
+          <span className="data-value">
+            <div className="progress-fill" style={{ width: `${pct}%` }} />
+            <span>{status.totalSupply} / {displayCap}</span>
+          </span>
+        </div>
       </div>
 
-      {/* Network */}
-      <div className="data-row">
-        <span className="data-label">Network</span>
-        <span className="data-value">{chain.name}</span>
-      </div>
-
-      {/* Status */}
-      <div className="data-row">
-        <span className="data-label">Status</span>
-        <span className="data-value">
-          <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
-        </span>
-      </div>
-
-      {/* Supply */}
-      <div className="data-row data-row--supply" style={{ border: 'none' }}>
-        <span className="data-label">Supply</span>
-        <span className="data-value">
-          <div className="progress-fill" style={{ width: `${pct}%` }} />
-          <span>{status.totalSupply} / {displayCap}</span>
-        </span>
-      </div>
-
-      {/* Properties — all 4 rows fixed, icon + value display */}
+      {/* Properties */}
       <div className="card-section">
         <span className="section-label"><EmojiText>🍬 Properties 🍬</EmojiText></span>
         {properties.map((p) => (

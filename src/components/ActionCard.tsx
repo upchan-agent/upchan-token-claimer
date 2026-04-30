@@ -84,7 +84,7 @@ export function ActionCard({ token, status, chain, onRefetch }: Props) {
   return (
     <div className="card anim anim-d3">
       {/* Gate section — delegated to GateRenderer per gate type */}
-      <div className="card-section card-block--lg">
+      <div className="card-section card-section--center card-block--lg">
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
 
         {!status.isLoading && (

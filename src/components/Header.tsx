@@ -1,6 +1,7 @@
 'use client';
 
 import { useUpProvider } from '@/lib/up-provider';
+import { EmojiText } from './EmojiText';
 
 export function Header() {
   const { accounts, isConnected, isDetecting, isConnecting, connect, disconnect } = useUpProvider();
@@ -9,16 +10,15 @@ export function Header() {
   return (
     <header className="app-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span className="header-logo">🆙</span>
-        <span className="text-caption-bold">Token Claimer</span>
+        <span className="text-caption-bold"><EmojiText>🆙chan</EmojiText> Token Claimer</span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {isDetecting ? (
           <span className="text-micro">...</span>
         ) : isConnected ? (
-          <div className="connected-badge">
-            <span className="connected-dot" />
+          <div className="app-badge">
+            <span className="app-badge-dot" />
             <span className="text-caption-bold">
               {addr?.slice(0, 6)}…{addr?.slice(-4)}
             </span>
@@ -30,9 +30,9 @@ export function Header() {
           <button
             onClick={connect}
             disabled={isConnecting}
-            className="btn btn-primary btn-header"
+            className="btn btn-primary btn-sm"
           >
-            {isConnecting ? '...' : 'Connect Wallet'}
+            {isConnecting ? '...' : <EmojiText>Connect 🆙</EmojiText>}
           </button>
         )}
       </div>

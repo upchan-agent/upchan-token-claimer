@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TokenConfig } from '@/config/tokens';
 import { useTokenOnChainData } from '@/lib/useTokenData';
+import { EmojiText } from './EmojiText';
 import { Popup } from './Popup';
 
 function ipfs(url: string): string {
@@ -20,34 +21,32 @@ export function TokenCard({ token }: { token: TokenConfig }) {
 
   return (
     <>
-      <div className="card anim anim-d1 token-card-body">
-        {/* Token image — 88px, radius 12px */}
-        <div
-          className={`token-img-wrap${hasImg ? ' loaded' : ''}`}
-          onClick={() => hasImg && setPopup(true)}
-        >
-          {(!hasImg || onChain.isLoading) && (
-            <div className="token-img-loading">🆙</div>
-          )}
-          {hasImg && (
-            <img
-              src={imgUrl}
-              alt={name}
-              className="token-img-loaded"
-              style={{ opacity: onChain.isLoading ? 0 : 1 }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-          )}
-        </div>
+      <div className="card anim anim-d1">
+        <div className="card-token">
+          <div
+            className="card-token-media"
+            onClick={() => hasImg && setPopup(true)}
+          >
+            {hasImg ? (
+              <img
+                src={imgUrl}
+                alt={name}
+                className="card-media-img"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : (
+              <div className="card-media-skeleton" />
+            )}
+          </div>
 
-        {/* Card Title */}
-        <div className="text-center">
-          <h1 className="text-card-title" style={{ margin: 0 }}>
-            {name}
-          </h1>
-          <p className="text-caption token-symbol" style={{ visibility: sym ? 'visible' : 'hidden' }}>
-            {sym ? `$${sym}` : '—'}
-          </p>
+          <div>
+            <h1 className="text-card-title" style={{ margin: 0 }}>
+              <EmojiText>{name}</EmojiText>
+            </h1>
+            <p className="text-caption" style={{ margin: 'var(--space-2xs) 0 0', visibility: sym ? 'visible' : 'hidden' }}>
+              {sym ? `$${sym}` : '—'}
+            </p>
+          </div>
         </div>
       </div>
 

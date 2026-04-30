@@ -1,14 +1,15 @@
 'use client';
 
 import { useHolders } from '@/lib/useHolders';
-import { TokenConfig } from '@/config/tokens';
+import { TokenConfig, profileUrl } from '@/config/tokens';
+import { EmojiText } from './EmojiText';
 
 function ipfs(url: string) {
   return url?.replace('ipfs://', 'https://ipfs.io/ipfs/') || '';
 }
 
 export function HoldersCard({ token }: { token: TokenConfig }) {
-  const { holders, isLoading } = useHolders(token);
+  const { holders, isLoading, error } = useHolders(token);
 
   return (
     <div className="card anim anim-d4">
@@ -16,16 +17,14 @@ export function HoldersCard({ token }: { token: TokenConfig }) {
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', marginBottom: 12,
       }}>
-        <span className="section-label">Holders</span>
+        <span className="section-label"><EmojiText>🐱 Holders 🐱</EmojiText></span>
         <span className="text-micro-bold">{holders.length}</span>
       </div>
 
-      <div className="holders-scroll">
-        {isLoading ? (
-          <div className="empty-state">
-            <p className="text-caption">Loading...</p>
-          </div>
-        ) : holders.length === 0 ? (
+      <div className="holder-list">
+        {error ? (
+          <div className="error-box">{error}</div>
+        ) : !isLoading && holders.length === 0 ? (
           <div className="empty-state">
             <p className="text-caption">No holders yet</p>
           </div>
@@ -34,7 +33,7 @@ export function HoldersCard({ token }: { token: TokenConfig }) {
             {holders.map((h) => (
               <a
                 key={h.address}
-                href={`https://universalprofile.cloud/${h.address}`}
+                href={profileUrl(h.address)}
                 target="_blank" rel="noopener noreferrer"
                 className="hoverable-row"
               >

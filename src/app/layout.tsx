@@ -18,8 +18,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: '🆙chan Token Claimer',
-  description: 'Claim your 🆙chan tokens on LUKSO',
+  title: '🆙chan Token Minter',
+  description: 'Mint your 🆙chan tokens on LUKSO',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

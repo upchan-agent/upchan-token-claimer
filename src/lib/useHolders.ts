@@ -16,7 +16,7 @@ const ENVIO_URLS: Record<number, string> = {
   4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
 };
 
-/* ─── Build pagination URL — handles object and string next_page_params ─── */
+// ─── Build pagination URL — handles object and string next_page_params ───
 
 function buildPaginationUrl(baseUrl: string, nextPageParams: unknown): string {
   if (!nextPageParams) return baseUrl;
@@ -30,7 +30,7 @@ function buildPaginationUrl(baseUrl: string, nextPageParams: unknown): string {
   return baseUrl;
 }
 
-/* ─── Fetch current holders from Blockscout ─── */
+// ─── Fetch current holders from Blockscout ───
 
 async function fetchCurrentHolders(explorerApi: string, tokenProxy: string): Promise<string[]> {
   const holders: string[] = [];
@@ -62,7 +62,7 @@ async function fetchCurrentHolders(explorerApi: string, tokenProxy: string): Pro
   return holders;
 }
 
-/* ─── Batch resolve profiles via Envio Indexer (GraphQL) ─── */
+// ─── Batch resolve profiles via Envio Indexer ───
 
 interface EnvioProfile {
   id: string;
@@ -116,7 +116,7 @@ async function batchResolveProfiles(addresses: string[], chainId: number): Promi
   return result;
 }
 
-/* ─── Main fetch: holders from Blockscout + profiles from Envio ─── */
+// ─── Main fetch: holders from Blockscout + profiles from Envio ───
 
 async function fetchHolders(token: TokenConfig): Promise<Holder[]> {
   const chain = CHAINS[token.chainId];
@@ -142,11 +142,11 @@ export function useHolders(token: TokenConfig | null) {
     queryKey: ['token-holders', token?.proxy, token?.chainId],
     queryFn: () => fetchHolders(token!),
     enabled: !!token?.proxy,
-    staleTime: 30_000,
   });
 
   return {
     holders: query.data ?? [],
     isLoading: query.isLoading,
+    error: query.error?.message ?? null,
   };
 }

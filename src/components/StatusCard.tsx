@@ -1,8 +1,10 @@
 'use client';
 
-import { TokenConfig } from '@/config/tokens';
+import { ethers } from 'ethers';
+import { TokenConfig, assetUrl } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
 import { YesIcon, NoIcon, DashIcon } from './Icons';
+import { EmojiText } from './EmojiText';
 
 interface Props {
   token: TokenConfig;
@@ -19,8 +21,8 @@ interface PropRow {
   display: string;
 }
 
-function PropIcon({ value }: { value: PropValue }) {
-  const cls = `prop-icon--${value}`;
+function StatusIcon({ value }: { value: PropValue }) {
+  const cls = `status-icon--${value}`;
   const size = 14;
   switch (value) {
     case 'yes':
@@ -30,11 +32,13 @@ function PropIcon({ value }: { value: PropValue }) {
     case 'none':
       return <span className={cls}><DashIcon size={size} /></span>;
   }
+  return null;
 }
 
 export function StatusCard({ token, status, chain }: Props) {
-  const pct = token.supplyCap > 0
-    ? Math.min((status.totalSupply / token.supplyCap) * 100, 100)
+  const displayCap = status.supplyCap;
+  const pct = displayCap > 0
+    ? Math.min((status.totalSupply / displayCap) * 100, 100)
     : 0;
 
   const statusClass = status.mintingDisabled
@@ -48,8 +52,8 @@ export function StatusCard({ token, status, chain }: Props) {
       ? 'Minting Open'
       : 'Paused';
 
-  /* All properties always shown — card size never changes per contract
-     Loading state shows all-neutral dashes for visual consistency */
+  // All properties always shown — card size maintains stable layout
+  // Loading state shows dashes for visual consistency
   const load = status.isLoading;
   const properties: PropRow[] = [
     {
@@ -76,18 +80,18 @@ export function StatusCard({ token, status, chain }: Props) {
 
   return (
     <div className="card anim anim-d2">
-      <span className="section-label">Details</span>
+      <span className="section-label"><EmojiText>🍭 Details 🍭</EmojiText></span>
 
-      {/* Contract — link to Universal Explorer (no copy button) */}
+      {/* Contract — link to universaleverything.io */}
       <div className="data-row">
         <span className="data-label">Contract</span>
         <a
-          href={`https://universalprofile.cloud/${token.proxy}`}
+          href={assetUrl(ethers.getAddress(token.proxy), token.chainId)}
           target="_blank"
           rel="noopener noreferrer"
           className="data-value link"
         >
-          {token.proxy.slice(0, 8)}...{token.proxy.slice(-6)} ↗
+          {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)} ↗
         </a>
       </div>
 
@@ -100,33 +104,36 @@ export function StatusCard({ token, status, chain }: Props) {
       {/* Status */}
       <div className="data-row">
         <span className="data-label">Status</span>
-        <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
+        <span className="data-value">
+          <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
+        </span>
       </div>
 
       {/* Supply */}
-      <div className="data-row" style={{ border: 'none' }}>
+      <div className="data-row data-row--supply" style={{ border: 'none' }}>
         <span className="data-label">Supply</span>
         <span className="data-value">
-          {status.totalSupply} / {token.supplyCap}
+          <div className="progress-fill" style={{ width: `${pct}%` }} />
+          <span>{status.totalSupply} / {displayCap}</span>
         </span>
-      </div>
-      <div className="progress-track" style={{ margin: 'var(--space-2xs) 0' }}>
-        <div className="progress-fill" style={{ width: `${pct}%` }} />
       </div>
 
       {/* Properties — all 4 rows fixed, icon + value display */}
       <div className="card-section">
-        <span className="section-label">Properties</span>
+        <span className="section-label"><EmojiText>🍬 Properties 🍬</EmojiText></span>
         {properties.map((p) => (
           <div className="data-row" key={p.label}>
             <span className="data-label">{p.label}</span>
-            <span className="data-value prop-value">
-              <PropIcon value={p.value} />
-              <span>{p.display}</span>
-            </span>
+            <StatusIcon value={p.value} />
+            <span className="data-value">{p.display}</span>
           </div>
         ))}
       </div>
+
+      {/* Error */}
+      {status.error && (
+        <div className="error-box">{status.error}</div>
+      )}
     </div>
   );
 }

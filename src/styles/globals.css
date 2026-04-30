@@ -3,13 +3,15 @@
    DESIGN.md Strict Compliance · Apple-inspired
    ═══════════════════════════════════════════════════════
    命名規則：
-     .text-*   → Typography
-     .btn-*    → Buttons
-     .card-*   → Card
-     .data-*   → Data Display
-     .status-* → Status & Feedback
-     .token-*  → Token-specific
-     .app-*    → Layout / Shell
+     .text-*    → Typography
+     .btn-*     → Buttons
+     .card-*    → Card (incl. .card-media-*)
+     .data-*    → Data Display
+     .status-*  → Status & Feedback
+     .app-*     → Layout / Shell
+     .progress-*→ Progress bars
+     .pill-*    → Segmented controls
+     .anim-d*   → Staggered animations
    ═══════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════
@@ -71,6 +73,11 @@
 
 * { box-sizing: border-box; }
 
+/* Fluent UI Emoji: match surrounding text size */
+.emoji-fluent {
+  vertical-align: -0.15em;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -103,12 +110,9 @@ body {
   background: var(--c-canvas);
 }
 
-.header-logo {
-  font-size: 16px;
-}
 
 .app-header {
-  height: 44px;   /* Apple iOS nav bar height */
+  height: 44px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -129,22 +133,29 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
+  gap: var(--space-2xs);
   font-size: 10px;
   line-height: 1;
   color: var(--c-text-muted);
   border-top: 1px solid var(--c-border);
 }
 
-.footer-divider {
-  color: var(--c-text-muted);
-  font-size: 10px;
-  line-height: inherit;
+/* Header wallet badge */
+.app-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: rgba(0, 0, 0, 0.03);
+  padding: var(--space-2xs) 10px;
+  border-radius: var(--radius-md);
 }
 
-.footer-icon {
-  display: inline-flex;
-  align-items: center;
+.app-badge-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-success);
 }
 
 .scrollable {
@@ -168,11 +179,14 @@ body {
   padding: 0 var(--content-padding);
 }
 
-.centered {
-  flex: 1;
+/* ─── Card Grid (card stack inside scrollable) ─── */
+
+.card-stack {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-xl);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -224,7 +238,7 @@ body {
   color: var(--c-text);
 }
 
-/* Section Label (11px uppercase, used inside cards) */
+/* Section Label (14px uppercase) */
 .section-label {
   font-size: 14px;
   font-weight: 600;
@@ -235,11 +249,8 @@ body {
   margin-bottom: var(--space-xs);
 }
 
-/* Mono font */
-.text-center { text-align: center; }
-
 /* ═══════════════════════════════════════════════════════
-   5. 🃏 Card — Container, sections & footer
+   5. 🃏 Card — Container, sections & media
    ═══════════════════════════════════════════════════════ */
 
 .card {
@@ -247,6 +258,28 @@ body {
   border-radius: var(--radius-xl);
   padding: var(--space-lg);
   box-shadow: var(--shadow-card);
+}
+
+/* Token identity card: image left, name right */
+.card-token {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.card-token-media {
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.card-token-media:hover {
+  transform: scale(1.03);
+  transition: transform 0.2s ease;
 }
 
 .card-section {
@@ -262,22 +295,51 @@ body {
 }
 
 /* Card block: fixed min-height for stable layout */
-.card-block--sm {
-  min-height: 40px;
+.card-block--sm { min-height: 40px; }
+.card-block--md { min-height: 100px; }
+.card-block--lg { min-height: 130px; }
+
+/* ─── Card Media (replaces .token-img-*) ─── */
+
+.card-media {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+  background: transparent;
 }
 
-.card-block--md {
-  min-height: 100px;
+.card-media:hover {
+  transform: scale(1.03);
+  transition: transform 0.2s ease;
 }
 
-.card-block--lg {
-  min-height: 130px;
+.card-media-skeleton {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    var(--c-canvas) 25%,
+    rgba(0,0,0,0.06) 50%,
+    var(--c-canvas) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.card-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* ═══════════════════════════════════════════════════════
    6. 🔗 Links — Unified link styling
-   ═══════════════════════════════════════════════════════
-   Was: .card-link / .footer-link / .tx-hash-link (merged)
    ═══════════════════════════════════════════════════════ */
 
 .link {
@@ -301,6 +363,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
   border: none;
   font-family: inherit;
   line-height: 1;
@@ -312,34 +375,38 @@ body {
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* Primary Blue CTA (DESIGN.md exact: 8px radius, 17px, weight 400) */
+/* Primary Blue CTA */
 .btn-primary {
   background: var(--c-accent);
   color: #ffffff;
   border-radius: var(--radius-md);
   font-size: 17px;
   font-weight: 400;
-  padding: var(--space-xs) var(--space-md);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--c-accent-hover);
 }
 
-/* Secondary button (subtle gray) */
+/* Secondary button */
 .btn-secondary {
   background: rgba(0, 0, 0, 0.05);
   color: var(--c-text-secondary);
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 400;
-  padding: var(--space-xs) var(--space-md);
 }
 
-/* Large CTA (replaces .btn-full + .btn-primary coupling) */
+/* Small button (replaces .btn-header) */
+.btn-sm {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+}
+
+/* Full-width CTA */
 .btn-lg {
   width: 100%;
-  padding: var(--space-sm) var(--space-xl);
 }
 
 /* Icon button (small, transparent) */
@@ -358,13 +425,6 @@ body {
   background: rgba(0, 0, 0, 0.04);
 }
 
-/* Header-specific compact button */
-.btn-header {
-  font-size: 14px;
-  font-weight: 600;
-  padding: 6px 14px;
-}
-
 /* Pill segmented control (token selector) */
 .pill-group {
   display: flex;
@@ -374,10 +434,9 @@ body {
   background: #e8e8ed;
 }
 
-/* Pill tab (inside .pill-group) */
 .pill-item {
   flex: 1;
-  padding: 8px 18px;
+  padding: var(--space-xs) var(--space-md);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.29;
@@ -402,8 +461,9 @@ body {
    ═══════════════════════════════════════════════════════ */
 
 .data-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr;
+  gap: var(--space-xs);
   align-items: center;
   padding: var(--space-2xs) 0;
 }
@@ -413,6 +473,8 @@ body {
 }
 
 .data-label {
+  grid-column: 1;
+  padding-left: 18px;
   font-size: 14px;
   font-weight: 400;
   line-height: 1.29;
@@ -421,6 +483,11 @@ body {
 }
 
 .data-value {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.29;
@@ -432,33 +499,42 @@ body {
   color: var(--c-accent);
 }
 
-/* Transaction hash display */
-.tx-hash {
-  margin-top: var(--space-xs);
-  padding: var(--space-xs) 10px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
+/* Supply row: progress bar as value background */
+.data-row--supply .data-value {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.06);
+  height: 20px;
+  min-width: 0;
 }
 
-/* Property row value: icon + text */
-.prop-value {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2xs);
+.data-row--supply .progress-fill {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  border-radius: var(--radius-pill);
 }
 
-.prop-icon--yes {
+.data-row--supply .data-value > span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Icon in middle column (3-col grid auto-placement) */
+.status-icon--yes,
+.status-icon--no,
+.status-icon--none {
+  display: flex;
+  justify-content: center;
   color: var(--c-success);
 }
 
-.prop-icon--no {
+.status-icon--no {
   color: var(--c-error);
 }
 
-.prop-icon--none {
+.status-icon--none {
   color: var(--c-text-tertiary);
 }
 
@@ -491,6 +567,20 @@ body {
 
 .status-pill--paused {
   background: rgba(0, 0, 0, 0.04);
+  color: var(--c-text-tertiary);
+}
+
+/* ─── Status icons (replaces .prop-icon-*) ─── */
+
+.status-icon--yes {
+  color: var(--c-success);
+}
+
+.status-icon--no {
+  color: var(--c-error);
+}
+
+.status-icon--none {
   color: var(--c-text-tertiary);
 }
 
@@ -587,54 +677,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   10. 🖼️ Token-specific — Token Card components
-   ═══════════════════════════════════════════════════════ */
-
-.token-card-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xl) var(--space-lg);
-}
-
-.token-img-wrap {
-  width: 88px;
-  height: 88px;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  position: relative;
-  background: rgba(0, 0, 0, 0.03);
-  transition: transform 0.2s ease;
-}
-
-.token-img-wrap.loaded:hover {
-  transform: scale(1.03);
-}
-
-.token-img-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-}
-
-.token-img-loaded {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transition: opacity 0.2s;
-}
-
-.token-symbol {
-  margin: var(--space-2xs) 0 0;
-  color: var(--c-text-tertiary);
-}
-
-/* ═══════════════════════════════════════════════════════
-   11. ✨ Interaction — Hover, animations, badges
+   10. ✨ Interaction — Hover, animations, badges
    ═══════════════════════════════════════════════════════ */
 
 /* ─── Hoverable Row (CSS-only :hover for list rows) ─── */
@@ -655,38 +698,9 @@ body {
   background: rgba(0, 0, 0, 0.03);
 }
 
-/* ─── Connected Wallet Badge ─── */
+/* ─── Holder list ─── */
 
-.connected-badge {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  background: rgba(0, 0, 0, 0.03);
-  padding: var(--space-2xs) 10px;
-  border-radius: var(--radius-md);
-}
-
-.connected-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--c-success);
-}
-
-/* ─── Card Grid (card stack inside scrollable) ─── */
-
-.card-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  padding-top: var(--space-xl);
-  padding-bottom: var(--space-xl);
-}
-
-/* ─── Holders Card — scrollable list ─── */
-
-.holders-scroll {
+.holder-list {
   max-height: 280px;
   min-height: 100px;
   overflow-y: auto;
@@ -694,21 +708,21 @@ body {
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
 }
 
-.holders-scroll::-webkit-scrollbar { width: 4px; }
-.holders-scroll::-webkit-scrollbar-thumb {
+.holder-list::-webkit-scrollbar { width: 4px; }
+.holder-list::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.08);
   border-radius: var(--radius-xs);
 }
 
-/* ─── Animations ─── */
+/* ─── Staggered Animations ─── */
 
 @keyframes float-in {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.anim { animation: float-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.anim-d1 { animation-delay: 0.05s; }
-.anim-d2 { animation-delay: 0.12s; }
-.anim-d3 { animation-delay: 0.19s; }
-.anim-d4 { animation-delay: 0.26s; }
+.anim { animation: float-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-d1 { animation-delay: 0.1s; }
+.anim-d2 { animation-delay: 0.2s; }
+.anim-d3 { animation-delay: 0.3s; }
+.anim-d4 { animation-delay: 0.4s; }

@@ -3,12 +3,8 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
-import { TokenConfig, SELECTORS, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS, getGateInfo } from '@/config/tokens';
-
-const ENVIO_URLS: Record<number, string> = {
-  42: 'https://envio.lukso-mainnet.universal.tech/v1/graphql',
-  4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
-};
+import { TokenConfig, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS } from '@/config/tokens';
+import { EIP1193Provider } from './up-provider';
 
 export interface TokenStatus {
   totalSupply: number;
@@ -22,7 +18,6 @@ export interface TokenStatus {
   isSupplyCapFixed: boolean;
   isFollowing: boolean;
   mintGate: `0x${string}`;
-  gateInfo: ReturnType<typeof getGateInfo>;
   canMint: boolean;
   isLoading: boolean;
   isFetching: boolean;
@@ -53,62 +48,36 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
   const [ts, im, md, isb, rev, tsc, tbc, iscf, mg] = await Promise.all([
-    c.totalSupply(),
-    c.isMintable(),
+    c.totalSupply().catch(() => 0),
+    c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
     c.isSoulbound().catch(() => true),
     c.revokable().catch(() => false),
-    c.tokenSupplyCap().catch(() => token.supplyCap),
+    c.tokenSupplyCap().catch(() => 0),
     c.tokenBalanceCap().catch(() => 0),
     c.isSupplyCapFixed().catch(() => false),
     c.mintGate().catch(() => DEFAULT_GATE),
   ]);
 
   let userBalance = 0;
-  let isFollowing = false;
 
-  if (userAddress && token.targetProfile) {
-    // Envio follow check (fast, no RPC)
-    const envioFollow = await (async () => {
-      const envioUrl = ENVIO_URLS[token.chainId];
-      if (!envioUrl) return null;
-      try {
-        const q = `{Follow(where:{follower_id:{_eq:"${userAddress.toLowerCase()}"} followee_id:{_eq:"${token.targetProfile.toLowerCase()}"}}){id}}`;
-        const r = await fetch(envioUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query:q}), signal:AbortSignal.timeout(4000) });
-        if (!r.ok) return null;
-        const d = await r.json();
-        return (d?.data?.Follow || []).length > 0;
-      } catch { return null; }
-    })();
-
-    const [bal, fol] = await Promise.all([
+  if (userAddress) {
+    const [bal] = await Promise.all([
       c.balanceOf(userAddress).catch(() => 0),
-      p.call({
-        to: LSP26_ADDRESS,
-        data: SELECTORS.isFollowing +
-          userAddress.slice(2).padStart(64, '0') +
-          token.targetProfile.slice(2).padStart(64, '0'),
-      }).then(r => r.endsWith('1')).catch(() => false),
     ]);
     userBalance = Number(bal);
-    isFollowing = envioFollow !== null ? envioFollow : fol;
   }
 
   const mintGate = ethers.getAddress(mg) as `0x${string}`;
-  const supplyCap = Number(tsc) || token.supplyCap || Infinity;
-  const gateInfo = getGateInfo(mintGate);
+  const supplyCap = Number(tsc) || Infinity;
 
-  /* ─── IGate canMint check ───
-     If mintGate points to an IGate-compliant contract, use canMint().
-     Fallback: use isFollowing (LSP26 follow, backward compat).         */
   let canMintViaGate = true;
   if (userAddress && mintGate !== DEFAULT_GATE) {
     try {
       const gateContract = new ethers.Contract(mintGate, GATE_ABI, p);
-      canMintViaGate = await gateContract.canMint(userAddress);
+      canMintViaGate = await gateContract.canMint(userAddress, userAddress, 1);
     } catch {
-      // IGate未対応 → isFollowing でフォールバック
-      canMintViaGate = isFollowing;
+      canMintViaGate = false;
     }
   }
 
@@ -122,9 +91,8 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
     revokable: !!rev,
     balanceCap: Number(tbc),
     isSupplyCapFixed: !!iscf,
-    isFollowing,
+    isFollowing: false,
     mintGate,
-    gateInfo,
     canMint: !!im && canMintViaGate && userBalance === 0 && Number(ts) < supplyCap,
   };
 }
@@ -137,17 +105,15 @@ export function useTokenStatus(
     queryKey: ['token-status', token?.proxy, token?.chainId, userAddress],
     queryFn: () => fetchTokenStatus(token!, userAddress),
     enabled: !!token,
-    staleTime: 15_000,
     placeholderData: (prev) => prev,
   });
 
   const defaults = {
-    totalSupply: 0, supplyCap: token?.supplyCap || 0, userBalance: 0,
+    totalSupply: 0, supplyCap: 0, userBalance: 0,
     isMintable: false, mintingDisabled: false,
     isSoulbound: true, revokable: false, balanceCap: 0,
     isSupplyCapFixed: false, isFollowing: false,
     mintGate: DEFAULT_GATE as `0x${string}`,
-    gateInfo: getGateInfo(DEFAULT_GATE),
     canMint: false,
   };
 
@@ -166,7 +132,7 @@ export function useTokenStatus(
 export function useMint(
   token: TokenConfig | null,
   userAddress: `0x${string}` | null,
-  provider: any,
+  provider: EIP1193Provider | null,
   onDone?: () => void
 ) {
   const [isMinting, setIsMinting] = useState(false);
@@ -191,7 +157,6 @@ export function useMint(
       });
       setTxHash(txHashRaw as string);
 
-      // Wait for receipt properly instead of polling
       const chain = CHAINS[token.chainId];
       if (chain) {
         const p = new ethers.JsonRpcProvider(chain.rpc);
@@ -199,8 +164,8 @@ export function useMint(
       }
 
       onDone?.();
-    } catch (e: any) {
-      setError(e.message || 'Mint failed');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Mint failed');
     } finally {
       setIsMinting(false);
     }
@@ -213,7 +178,7 @@ export function useMint(
 
 export function useFollow(
   userAddress: `0x${string}` | null,
-  provider: any,
+  provider: EIP1193Provider | null,
   targetProfile: `0x${string}` | null,
   onDone?: () => void
 ) {
@@ -235,7 +200,6 @@ export function useFollow(
         params: [{ from: userAddress, to: userAddress, data: execData }],
       });
 
-      // Wait for receipt properly
       if (targetProfile) {
         const chain = CHAINS[42]; // Follow is always mainnet
         const p = new ethers.JsonRpcProvider(chain.rpc);
@@ -243,8 +207,8 @@ export function useFollow(
       }
 
       onDone?.();
-    } catch (e: any) {
-      setError(e.message || 'Follow failed');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Follow failed');
     } finally {
       setIsFollowing(false);
     }

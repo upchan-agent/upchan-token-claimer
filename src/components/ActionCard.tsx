@@ -3,6 +3,7 @@
 import { useUpProvider } from '@/lib/up-provider';
 import { useMint, TokenStatus } from '@/lib/useToken';
 import { TokenConfig } from '@/config/tokens';
+import { EmojiText } from './EmojiText';
 import { StatusMessage } from './StatusMessage';
 import { GateRenderer } from './gates/GateRenderer';
 
@@ -19,12 +20,12 @@ export function ActionCard({ token, status, chain, onRefetch }: Props) {
 
   const { mint, isMinting, txHash, error: me } = useMint(token, user, provider, onRefetch);
 
-  /* ─── Mint state ─── */
+  // ─── Mint state ───
   const renderMintState = () => {
     if (!isConnected) {
       return (
         <p className="text-caption empty-state">
-          Connect wallet to check eligibility
+          <EmojiText>Connect 🆙</EmojiText>
         </p>
       );
     }
@@ -59,7 +60,7 @@ export function ActionCard({ token, status, chain, onRefetch }: Props) {
       );
     }
 
-    if (status.totalSupply >= token.supplyCap) {
+    if (status.totalSupply >= status.supplyCap) {
       return (
         <StatusMessage
           variant="soldout"
@@ -84,26 +85,30 @@ export function ActionCard({ token, status, chain, onRefetch }: Props) {
     <div className="card anim anim-d3">
       {/* Gate section — delegated to GateRenderer per gate type */}
       <div className="card-section card-block--lg">
-        <span className="section-label">Eligibility</span>
+        <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
 
-        {status.isLoading ? (
-          <p className="text-caption" style={{ margin: 'var(--space-2xs) 0' }}>
-            Checking eligibility…
-          </p>
-        ) : (
+        {!status.isLoading && (
           <GateRenderer token={token} status={status} onRefetch={onRefetch} />
         )}
       </div>
 
       {/* Mint section */}
       <div className="card-block--md">
-        <span className="section-label">Claim</span>
+        <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
         {renderMintState()}
       </div>
 
       {/* TX hash */}
       {txHash && (
-        <div className="tx-hash">
+        <div style={{
+          marginTop: 'var(--space-xs)',
+          padding: 'var(--space-xs) 10px',
+          background: 'rgba(0, 0, 0, 0.03)',
+          borderRadius: 'var(--radius-md)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-xs)',
+        }}>
           <span className="text-micro">
             {txHash.slice(0, 10)}…{txHash.slice(-6)}
           </span>

@@ -314,6 +314,12 @@ body {
   justify-content: center;
 }
 
+/* Override full-width buttons inside centered sections */
+.card-section--center .btn {
+  width: auto;
+  min-width: 140px;
+}
+
 /* Card block: fixed min-height for stable layout */
 .card-block--sm { min-height: 40px; }
 .card-block--md { min-height: 100px; }

@@ -24,7 +24,14 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
   const { mint, isMinting, txHash, error: me } = useMint(token, user, provider, onRefetch);
 
   // ─── Mint state ───
+  const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
+
   const renderMintState = () => {
+    // Prevent flash: wait for data on connected state
+    if ((isConnected || isViewMode) && (status.isLoading || status.isFetching)) {
+      return <p className="text-caption">Checking…</p>;
+    }
+
     if (!isConnected && !isViewMode) {
       return (
         <p className="text-caption empty-state">
@@ -52,8 +59,7 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
       );
     }
 
-    // Claimed: only when balanceCap > 0 AND user already at/near cap
-    if (status.userBalance > 0 && status.balanceCap > 0 && status.userBalance >= status.balanceCap) {
+    if (isAtMaxBalance) {
       return (
         <StatusMessage
           variant="claimed"

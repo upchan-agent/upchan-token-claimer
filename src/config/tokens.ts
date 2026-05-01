@@ -25,6 +25,12 @@ export const COMPOSITE_ABI = [
 // ─── Tokens ───
 export const TOKENS: TokenConfig[] = [
   {
+    id: 'test-mint-v2',
+    proxy: '0x6C526eE2741c7150912825D5611C343136BC137f',
+    chainId: 4201,
+    mintGate: '0x0000000000000000000000000000000000000000',
+  },
+  {
     id: 'genesis-composite',
     proxy: '0xE90f6dcda4876DF3b56f78dceE1906103dBB129E',
     chainId: 4201,

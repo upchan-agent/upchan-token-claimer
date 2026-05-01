@@ -105,7 +105,6 @@ export function useTokenStatus(
     queryKey: ['token-status', token?.proxy, token?.chainId, userAddress],
     queryFn: () => fetchTokenStatus(token!, userAddress),
     enabled: !!token,
-    placeholderData: (prev) => prev,
   });
 
   const defaults = {

@@ -27,6 +27,11 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
   const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
 
   const renderMintState = () => {
+    // Prevent flash: no content until data is ready for connected users
+    if ((isConnected || isViewMode) && status.isLoading) {
+      return null;
+    }
+
     if (!isConnected && !isViewMode) {
       return (
         <p className="text-caption empty-state">

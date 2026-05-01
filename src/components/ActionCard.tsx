@@ -28,7 +28,7 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
 
   const renderMintState = () => {
     // Prevent flash: wait for data on connected state
-    if ((isConnected || isViewMode) && (status.isLoading || status.isFetching)) {
+    if ((isConnected || isViewMode) && status.isLoading) {
       return <p className="text-caption">Checking…</p>;
     }
 

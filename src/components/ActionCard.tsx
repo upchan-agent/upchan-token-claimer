@@ -122,7 +122,7 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
       </div>
 
       {/* Mint section */}
-      <div className="card-section card-section--center card-block--md">
+      <div className="card-section card-block--md">
         <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
         {renderMintState()}
       </div>

@@ -93,7 +93,7 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
     isSupplyCapFixed: !!iscf,
     isFollowing: false,
     mintGate,
-    canMint: !!im && canMintViaGate && userBalance === 0 && Number(ts) < supplyCap,
+    canMint: !!im && canMintViaGate && (Number(tbc) === 0 || userBalance < Number(tbc)) && Number(ts) < supplyCap,
   };
 }
 

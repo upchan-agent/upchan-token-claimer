@@ -52,7 +52,8 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
       );
     }
 
-    if (status.userBalance > 0) {
+    // Claimed: only when balanceCap > 0 AND user already at/near cap
+    if (status.userBalance > 0 && status.balanceCap > 0 && status.userBalance >= status.balanceCap) {
       return (
         <StatusMessage
           variant="claimed"
@@ -115,7 +116,7 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
       </div>
 
       {/* Mint section */}
-      <div className="card-block--md">
+      <div className="card-section card-section--center card-block--md">
         <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
         {renderMintState()}
       </div>

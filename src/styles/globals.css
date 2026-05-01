@@ -158,6 +158,21 @@ body {
   background: var(--c-success);
 }
 
+.view-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 113, 227, 0.08);
+  border: 1px solid rgba(0, 113, 227, 0.2);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--c-accent);
+  font-family: 'SF Mono', monospace;
+  flex-shrink: 0;
+}
+
 .scrollable {
   overflow-y: scroll;
   scrollbar-gutter: stable;
@@ -420,10 +435,17 @@ body {
   padding: var(--space-2xs);
   border-radius: var(--radius-pill);
   background: #e8e8ed;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pill-group::-webkit-scrollbar {
+  display: none;
 }
 
 .pill-item {
-  flex: 1;
+  flex: 0 0 auto;
   padding: var(--space-xs) var(--space-md);
   font-size: 14px;
   font-weight: 600;

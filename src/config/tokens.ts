@@ -37,6 +37,12 @@ export const TOKENS: TokenConfig[] = [
     mintGate: '0x7592d3A04c9BfE0eDf05630ca183B22Bd1D2D811',
   },
   {
+    id: 'genesis-v2',
+    proxy: '0x46f2c84D266eF835EC63a753A3E22065C74202d1',
+    chainId: 4201,
+    mintGate: '0x58bEa6a7e23ec74d4a93415bf950D72001EF1fac',
+  },
+  {
     id: 'phlametoken',
     proxy: '0xe8731f5d5002e2261175afb970517d4c5dad028c',
     chainId: 42,

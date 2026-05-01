@@ -55,10 +55,14 @@ export function TokenCard({ token }: { token: TokenConfig }) {
       </div>
 
       <Popup isOpen={popup} onClose={() => setPopup(false)}>
-        <img src={imgUrl} alt={name} style={{
-          maxWidth: '85vw', maxHeight: '85vh',
-          display: 'block', borderRadius: 'var(--radius-xl)',
-        }} />
+        <img
+          src={imgUrl}
+          alt={name}
+          style={{
+            maxWidth: '85vw', maxHeight: '85vh',
+            display: 'block', borderRadius: 'var(--radius-xl)',
+          }}
+        />
       </Popup>
     </>
   );

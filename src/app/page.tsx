@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import { TOKENS, CHAINS } from '@/config/tokens';
 import { useUpProvider } from '@/lib/up-provider';
+import { useViewMode } from '@/lib/useViewMode';
 import { useTokenStatus } from '@/lib/useToken';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -19,6 +20,7 @@ export default function HomePage() {
   const pathname = usePathname();
   const [id, setId] = useState<string | null>(params.get('token') || TOKENS[0]?.id || null);
   const { accounts, chainId, isConnected } = useUpProvider();
+  const vm = useViewMode(accounts[0] || null, isConnected);
 
   const chains = useMemo(() => {
     if (!isConnected || !chainId) return [...new Set(TOKENS.map(t => t.chainId))];
@@ -35,7 +37,7 @@ export default function HomePage() {
     return enabledTokens[0] || null;
   }, [id, enabledTokens]);
 
-  const user = accounts[0] || null;
+  const user = vm.user;
   const st = useTokenStatus(displayToken, user);
   const refresh = st.refetch;
 
@@ -47,7 +49,7 @@ export default function HomePage() {
   if (!displayToken) {
     return (
       <div className="app-shell">
-        <Header />
+        <Header onViewAddress={vm.setViewAddress} viewAddress={vm.viewAddress} />
         <Footer />
       </div>
     );
@@ -55,7 +57,7 @@ export default function HomePage() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header onViewAddress={vm.setViewAddress} viewAddress={vm.viewAddress} />
 
       {/* Scrollable body */}
       <div className="scrollable" style={{ flex: 1 }}>
@@ -75,7 +77,7 @@ export default function HomePage() {
           <StatusCard token={displayToken} status={st} chain={chain} onRefresh={refresh} />
 
           {/* Gate + Mint */}
-          <ActionCard token={displayToken} status={st} chain={chain} onRefetch={refresh} />
+          <ActionCard token={displayToken} status={st} chain={chain} onRefetch={refresh} userAddress={user} isViewMode={vm.isViewMode} />
 
           {/* Holders */}
           <HoldersCard token={displayToken} />

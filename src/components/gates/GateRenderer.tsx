@@ -13,93 +13,117 @@ interface Props {
   token: TokenConfig;
   status: TokenStatus;
   onRefetch: () => void;
+  userAddress?: `0x${string}` | null;
 }
 
 type GateType = 'follow' | 'none' | 'unknown';
 
-/**
- * Resolves the gate type by eth_call to the gate contract.
- * Falls back to 'unknown' if the call fails.
- */
-async function detectGateType(
+interface GateData {
+  type: GateType;
+  passed: boolean;
+  label: string;
+  target: string | null;
+}
+
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
+
+async function fetchTarget(addr: string, chainId: number): Promise<string | null> {
+  try {
+    const p = new ethers.JsonRpcProvider(CHAINS[chainId].rpc);
+    const iface = new ethers.Interface(['function target() view returns (address)']);
+    const data = iface.encodeFunctionData('target');
+    const result = await p.call({ to: addr, data });
+    const decoded = iface.decodeFunctionResult('target', result);
+    return (decoded[0] as string).toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+async function fetchGateData(
   gateAddress: string,
   chainId: number,
-  userAddress: string | null
-): Promise<{ type: GateType; label: string }> {
-  if (gateAddress === '0x0000000000000000000000000000000000000000') {
-    return { type: 'none', label: '' };
+  user: string | null
+): Promise<GateData> {
+  if (gateAddress === ZERO_ADDR) {
+    return { type: 'none', passed: false, label: '', target: null };
   }
 
   const chain = CHAINS[chainId];
-  if (!chain) return { type: 'unknown', label: '' };
+  if (!chain) return { type: 'unknown', passed: false, label: '', target: null };
 
   try {
     const p = new ethers.JsonRpcProvider(chain.rpc);
     const gate = new ethers.Contract(gateAddress, GATE_ABI, p);
 
-    // Try gateType() — should return "follow", "balance", "composite-and", etc.
-    const gtype: string = await gate.gateType();
-    const type = gtype.toLowerCase();
+    const gtypeRaw: string = await gate.gateType();
+    const gtype = gtypeRaw.toLowerCase();
 
-    // Try check(user) for display info
+    // Common: check(user) — all gate contracts implement this
+    let passed = false;
     let label = '';
-    if (userAddress) {
+    if (user) {
       try {
-        const [, l] = await gate.check(userAddress);
+        const [p, l] = await gate.check(user);
+        passed = p;
         label = l;
-      } catch { /* check not available */ }
+      } catch { /* gate.check may fail for some providers */ }
     }
 
-    if (type === 'follow') return { type: 'follow', label };
+    // Type-specific data
+    if (gtype === 'follow') {
+      const target = await fetchTarget(gateAddress, chainId);
+      return {
+        type: 'follow',
+        passed,
+        label: label || 'Must follow on LUKSO',
+        target,
+      };
+    }
 
-    // Future gate types will be handled here
-    return { type: 'unknown', label };
+    // Future gate types: add cases above (e.g. 'balance', 'composite-and')
+    return { type: 'unknown', passed, label, target: null };
   } catch {
-    // gateType() not available — treat as unknown
-    return { type: 'unknown', label: '' };
+    return { type: 'unknown', passed: false, label: '', target: null };
   }
 }
 
-export function GateRenderer({ token, status, onRefetch }: Props) {
-  const { accounts, isConnected } = useUpProvider();
-  const user = accounts[0] || null;
-  const hasGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
+export function GateRenderer({ token, status, onRefetch, userAddress }: Props) {
+  const { accounts } = useUpProvider();
+  const user = userAddress ?? accounts[0] ?? null;
+  const hasGate = status.mintGate !== ZERO_ADDR;
 
-  const [gateType, setGateType] = useState<GateType>('none');
-  const [gateLabel, setGateLabel] = useState('');
+  const [data, setData] = useState<GateData>({
+    type: 'none', passed: false, label: '', target: null,
+  });
 
+  // Single effect: fetches ALL gate data from the chain
   useEffect(() => {
     if (!hasGate) {
-      setGateType('none');
-      setGateLabel('');
+      setData({ type: 'none', passed: false, label: '', target: null });
       return;
     }
 
     let cancelled = false;
-    detectGateType(status.mintGate, token.chainId, user).then((result) => {
+    fetchGateData(status.mintGate, token.chainId, user).then((result) => {
       if (cancelled) return;
-      setGateType(result.type);
-      setGateLabel(result.label);
+      setData(result);
     });
 
     return () => { cancelled = true; };
   }, [status.mintGate, token.chainId, user, hasGate]);
 
-  if (!hasGate) {
-    return <NoGate />;
-  }
+  if (!hasGate) return <NoGate />;
 
-  switch (gateType) {
+  switch (data.type) {
     case 'follow':
       return (
-        <>
-          {gateLabel && (
-            <p className="text-caption" style={{ margin: 'var(--space-2xs) 0', lineHeight: 1.4 }}>
-              {gateLabel}
-            </p>
-          )}
-          <FollowGate token={token} status={status} onRefetch={onRefetch} />
-        </>
+        <FollowGate
+          gatePassed={data.passed}
+          gateLabel={data.label}
+          gateTarget={data.target}
+          onRefetch={onRefetch}
+        />
       );
     default:
       return <UnknownGate />;

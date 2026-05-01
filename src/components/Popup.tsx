@@ -6,9 +6,13 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  /** Fixed container width (e.g. '400px', '85vw'). Overrides max-constrained sizing. */
+  fixedWidth?: string;
+  /** Fixed container height (e.g. '500px', '85vh'). Overrides max-constrained sizing. */
+  fixedHeight?: string;
 }
 
-export function Popup({ isOpen, onClose, children }: Props) {
+export function Popup({ isOpen, onClose, children, fixedWidth, fixedHeight }: Props) {
   const prevOverflow = useRef<string>('');
 
   const handleKey = useCallback(
@@ -35,6 +39,7 @@ export function Popup({ isOpen, onClose, children }: Props) {
   return (
     <div
       onClick={onClose}
+      onTouchEnd={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -46,12 +51,16 @@ export function Popup({ isOpen, onClose, children }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '90vw', maxHeight: '90vh',
+          width: fixedWidth || 'auto',
+          height: fixedHeight || 'auto',
+          maxWidth: fixedWidth ? undefined : '90vw',
+          maxHeight: fixedHeight ? undefined : '90vh',
           position: 'relative',
         }}
       >
         <button
-          onClick={onClose}
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          onTouchEnd={(e) => { e.stopPropagation(); onClose(); }}
           style={{
             position: 'absolute', top: -12, right: -12,
             width: 28, height: 28, border: 'none',

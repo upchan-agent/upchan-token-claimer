@@ -12,21 +12,43 @@ interface Props {
   status: TokenStatus;
   chain: { name: string; explorer: string };
   onRefetch: () => void;
+  userAddress?: `0x${string}` | null;
+  isViewMode?: boolean;
 }
 
-export function ActionCard({ token, status, chain, onRefetch }: Props) {
+export function ActionCard({ token, status, chain, onRefetch, userAddress, isViewMode }: Props) {
   const { provider, accounts, isConnected } = useUpProvider();
-  const user = accounts[0] || null;
+  const walletUser = accounts[0] || null;
+  const user = walletUser; // mint/execute always uses connected wallet only
 
   const { mint, isMinting, txHash, error: me } = useMint(token, user, provider, onRefetch);
 
   // ─── Mint state ───
   const renderMintState = () => {
-    if (!isConnected) {
+    if (!isConnected && !isViewMode) {
       return (
         <p className="text-caption empty-state">
           <EmojiText>Connect 🆙</EmojiText>
         </p>
+      );
+    }
+
+    if (isViewMode) {
+      if (status.userBalance > 0) {
+        return (
+          <StatusMessage
+            variant="claimed"
+            title="Claimed ✓"
+            caption={`${status.userBalance} token${status.userBalance > 1 ? 's' : ''}`}
+          />
+        );
+      }
+      return (
+        <StatusMessage
+          variant="unavailable"
+          title="View Mode"
+          caption={`${userAddress?.slice(0, 6)}…${userAddress?.slice(-4)} — not claimed`}
+        />
       );
     }
 
@@ -88,7 +110,7 @@ export function ActionCard({ token, status, chain, onRefetch }: Props) {
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
 
         {!status.isLoading && (
-          <GateRenderer token={token} status={status} onRefetch={onRefetch} />
+          <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={userAddress} />
         )}
       </div>
 

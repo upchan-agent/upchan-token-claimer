@@ -26,9 +26,9 @@
 
 /* ─── Loaded: all effects activate ─── */
 
-.card-token-media--loaded {
-  animation: premium-float 4s ease-in-out infinite;
-  box-shadow: 0 0 30px rgba(255, 182, 193, 0.3), 0 0 50px rgba(190, 170, 230, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);
+@keyframes premium-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 /* Radiance aura (purple-blue magical glow) */
@@ -86,18 +86,15 @@
 
 .card-token-media--loaded:hover::after {
   animation-duration: 1.5s;
-  opacity: 1 !important;
 }
 
 .card-token-media--loaded:hover::before {
   animation-duration: 1s;
 }
 
-@keyframes premium-float {
-  0%, 100% { transform: translateY(0); }
-  25% { transform: translateY(-6px); }
-  50% { transform: translateY(-10px); }
-  75% { transform: translateY(-4px); }
+.card-token-media--loaded {
+  animation: premium-float 5s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(255, 182, 193, 0.3), 0 0 50px rgba(190, 170, 230, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .card-media-img {

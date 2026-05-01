@@ -31,7 +31,7 @@ const TOKEN_ABI = [
   'function mintingDisabled() view returns (bool)',
   'function isSoulbound() view returns (bool)',
   'function revokable() view returns (bool)',
-  'function tokenSupplyCap() view returns (uint256)',
+  'function flexibleSupplyCap() view returns (uint256)',
   'function tokenBalanceCap() view returns (uint256)',
   'function isSupplyCapFixed() view returns (bool)',
   'function mintGate() view returns (address)',
@@ -47,13 +47,13 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
-  const [ts, im, md, isb, rev, tsc, tbc, iscf, mg] = await Promise.all([
+  const [ts, im, md, isb, rev, fsc, tbc, iscf, mg] = await Promise.all([
     c.totalSupply().catch(() => 0),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
     c.isSoulbound().catch(() => true),
     c.revokable().catch(() => false),
-    c.tokenSupplyCap().catch(() => 0),
+    c.flexibleSupplyCap().catch(() => 0),
     c.tokenBalanceCap().catch(() => 0),
     c.isSupplyCapFixed().catch(() => false),
     c.mintGate().catch(() => DEFAULT_GATE),
@@ -69,7 +69,7 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
   }
 
   const mintGate = ethers.getAddress(mg) as `0x${string}`;
-  const supplyCap = Number(tsc) || Infinity;
+  const supplyCap = Number(fsc) || Infinity;
 
   let canMintViaGate = true;
   if (userAddress && mintGate !== DEFAULT_GATE) {

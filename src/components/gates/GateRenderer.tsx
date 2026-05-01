@@ -80,14 +80,13 @@ async function fetchChildGateData(
     let passed = false;
     let label = '';
     let progress = '';
-    if (user) {
-      try {
-        const [p2, l, pr] = await gate.check(user);
-        passed = p2;
-        label = l;
-        progress = pr;
-      } catch { /* check may fail */ }
-    }
+    const checkUser = user || '0x0000000000000000000000000000000000000001';
+    try {
+      const [p2, l, pr] = await gate.check(checkUser);
+      passed = p2;
+      label = l;
+      progress = pr;
+    } catch { /* check may fail */ }
 
     let target: string | null = null;
     if (gtype === 'follow') {
@@ -122,17 +121,18 @@ async function fetchGateData(
     const gtype = gtypeRaw.toLowerCase() as GateType;
 
     // Common: check(user) — all IGate contracts implement this
+    // Always call check() even without user, so gate conditions are visible
+    // before wallet connection
     let passed = false;
     let label = '';
     let progress = '';
-    if (user) {
-      try {
-        const [p2, l, pr] = await gate.check(user);
-        passed = p2;
-        label = l;
-        progress = pr;
-      } catch { /* check may fail */ }
-    }
+    const checkUser = user || '0x0000000000000000000000000000000000000001';
+    try {
+      const [p2, l, pr] = await gate.check(checkUser);
+      passed = p2;
+      label = l;
+      progress = pr;
+    } catch { /* check may fail */ }
 
     // Type-specific data
     if (gtype === 'follow') {

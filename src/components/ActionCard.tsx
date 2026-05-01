@@ -25,7 +25,6 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
 
   // ─── Mint state ───
   const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
-  const dataReady = !status.isLoading;
 
   const renderMintState = () => {
     if (!isConnected && !isViewMode) {
@@ -106,37 +105,21 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
     );
   };
 
-  const fadeClass = dataReady ? 'content-fade--visible' : '';
-
   return (
     <div className="card anim anim-d3">
-      {/* Gate section — delegated to GateRenderer per gate type */}
+      {/* Gate section — always visible, shows conditions even before connect */}
       <div className="card-section card-section--center card-block--lg">
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
-
-        <div className={`content-fade ${fadeClass}`}>
-          {dataReady ? (
-            <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={userAddress} />
-          ) : (
-            <div className="skeleton" style={{ height: 60, marginTop: 'var(--space-xs)' }} />
-          )}
-        </div>
+        <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={userAddress} />
       </div>
 
-      {/* Mint section */}
-      <div className="card-section card-block--md">
+      {/* Mint section — opacity 0 while loading data for connected users */}
+      <div className="card-section card-block--md" style={{
+        opacity: (!isConnected && !isViewMode) || !status.isLoading ? 1 : 0,
+        transition: 'opacity 200ms ease',
+      }}>
         <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
-        {!isConnected && !isViewMode ? (
-          <div className="content-fade content-fade--visible">
-            {renderMintState()}
-          </div>
-        ) : (
-          <div className={`content-fade ${fadeClass}`}>
-            {dataReady ? renderMintState() : (
-              <div className="skeleton" style={{ height: 48 }} />
-            )}
-          </div>
-        )}
+        {renderMintState()}
       </div>
 
       {/* TX hash */}

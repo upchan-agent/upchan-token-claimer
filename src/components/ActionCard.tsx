@@ -144,7 +144,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
       <button
         onClick={mint}
         disabled={isMinting}
-        className="btn btn-primary btn-lg"
+        className="btn btn-primary"
       >
         {isMinting ? 'Claiming...' : 'Mint NFT'}
       </button>

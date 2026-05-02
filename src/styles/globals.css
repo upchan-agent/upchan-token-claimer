@@ -386,7 +386,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-md);
+  padding: 8px 15px;  /* DESIGN.md §4: Primary Blue CTA */
   border: none;
   font-family: inherit;
   line-height: 1;
@@ -425,13 +425,6 @@ body {
   font-size: 14px;
   font-weight: 600;
   padding: 6px 14px;
-}
-
-/* Large button: more padding for emphasis (content-sized, never full-width) */
-.btn-lg {
-  font-size: 17px;
-  font-weight: 400;
-  padding: 12px 24px;
 }
 
 /* Icon button (small, transparent) */

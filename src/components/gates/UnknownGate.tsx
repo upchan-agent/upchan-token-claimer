@@ -64,7 +64,7 @@ function FollowButton({ target }: { target: string | null | undefined }) {
       <button
         onClick={follow}
         disabled={isFollowing || !target}
-        className="btn btn-primary btn-lg"
+        className="btn btn-primary"
       >
         {isFollowing ? 'Following...' : 'Follow on LUKSO'}
       </button>

@@ -4,9 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
 import { CHAINS } from '@/config/tokens';
 
-// Envio Indexer GraphQL — only mainnet (42) has indexed profile data
+// Envio Indexer GraphQL — testnet and mainnet (same as useHolders.ts)
 const ENVIO_URLS: Record<number, string> = {
   42: 'https://envio.lukso-mainnet.universal.tech/v1/graphql',
+  4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
 };
 
 const LSP3_PROFILE_KEY = '0x5ef83ad9559033e6e941db7d7c495acdce616347d28e90c7ce47cbfcfcad3bc5';
@@ -26,12 +27,15 @@ function ipfs(url: string): string {
   return url?.replace('ipfs://', 'https://ipfs.io/ipfs/') || '';
 }
 
-// ─── Strategy 1: Envio Indexer (mainnet only) ───
+// ─── Strategy 1: Envio Indexer (useHoldersと同じ _in 形式) ───
 
-async function fromEnvio(address: string): Promise<{ name: string; image: string } | null> {
+async function fromEnvio(address: string, chainId: number): Promise<{ name: string; image: string } | null> {
+  const envioUrl = ENVIO_URLS[chainId];
+  if (!envioUrl) return null;
+
   try {
-    const query = `{Profile(where:{id:"${address.toLowerCase()}"}){id name profileImages{url}}}`;
-    const res = await fetch(ENVIO_URLS[42], {
+    const query = `{Profile(where:{id:{_in:["${address.toLowerCase()}"]}}){id name profileImages{url}}}`;
+    const res = await fetch(envioUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query }),
@@ -50,7 +54,7 @@ async function fromEnvio(address: string): Promise<{ name: string; image: string
   }
 }
 
-// ─── Strategy 2: On-chain getData (all chains, fallback) ───
+// ─── Strategy 2: On-chain getData (fallback for edge cases) ───
 
 async function fromOnChain(address: string, chainId: number): Promise<{ name: string; image: string } | null> {
   try {
@@ -64,7 +68,6 @@ async function fromOnChain(address: string, chainId: number): Promise<{ name: st
     const [decoded] = abi.decode(['bytes'], raw);
     const hex = ethers.hexlify(decoded);
 
-    // VerifiableURI: identifier(2)+method(4)+dataLen(2)+dataHash(32) = 40 bytes
     let uri = '';
     for (const offset of [38, 40]) {
       try {
@@ -74,11 +77,10 @@ async function fromOnChain(address: string, chainId: number): Promise<{ name: st
           uri = decoded;
           break;
         }
-      } catch { /* try next offset */ }
+      } catch { /* try next */ }
     }
     if (!uri) return null;
 
-    // Fetch the LSP3 JSON from IPFS
     const url = ipfs(uri);
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) return null;
@@ -97,14 +99,14 @@ async function fromOnChain(address: string, chainId: number): Promise<{ name: st
 
 /**
  * Fetch UP profile metadata.
- * Strategy: Envio first (mainnet), falls back to on-chain getData.
+ * Strategy: Envio first (all chains), falls back to on-chain getData.
  */
 export async function fetchProfileMeta(
   address: string,
   chainId: number
 ): Promise<ProfileMeta | null> {
-  // Try Envio first (only works for mainnet)
-  const envioResult = chainId === 42 ? await fromEnvio(address) : null;
+  // Try Envio first (works for testnet and mainnet)
+  const envioResult = await fromEnvio(address, chainId);
   if (envioResult) {
     return { ...envioResult, address };
   }
@@ -119,8 +121,8 @@ export async function fetchProfileMeta(
 }
 
 /**
- * React hook: fetches profile metadata for a given UP address.
- * Envio → on-chain fallback. 10min cache.
+ * React hook: fetches profile metadata for a given UP address via Envio.
+ * Cached via react-query with 10min stale time.
  */
 export function useProfileMetadata(address: string | null | undefined, chainId: number) {
   return useQuery({

@@ -165,7 +165,10 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
       {/* Claim — shows loading state while user data is being fetched */}
       <div className="card-section card-section--center card-block--md">
         <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
-        {renderMintState()}
+        {/* Wrapper div: keeps :last-child from stretching the button itself */}
+        <div>
+          {renderMintState()}
+        </div>
       </div>
 
       {/* TX hash */}

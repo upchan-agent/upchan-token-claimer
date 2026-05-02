@@ -14,10 +14,9 @@ export function HoldersCard({ token }: { token: TokenConfig }) {
   return (
     <div className="card anim anim-d4">
       <div className="card-section">
-        <div className="data-row">
-          <span className="data-label"><EmojiText>🐱 Holders 🐱</EmojiText></span>
-          <span />
-          <span className="data-value">{holders.length}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span className="section-label"><EmojiText>🐱 Holders 🐱</EmojiText></span>
+          <span className="section-label">{holders.length}</span>
         </div>
 
         <div className="holder-list">

@@ -20,7 +20,7 @@ export default function HomePage() {
   const pathname = usePathname();
   const [id, setId] = useState<string | null>(params.get('token') || TOKENS[0]?.id || null);
   const { accounts, chainId, isConnected } = useUpProvider();
-  const vm = useViewMode(accounts[0] || null, isConnected);
+  const vm = useViewMode(accounts[0] || null);
 
   const chains = useMemo(() => {
     if (!isConnected || !chainId) return [...new Set(TOKENS.map(t => t.chainId))];
@@ -37,8 +37,7 @@ export default function HomePage() {
     return enabledTokens[0] || null;
   }, [id, enabledTokens]);
 
-  const user = vm.user;
-  const st = useTokenStatus(displayToken, user);
+  const st = useTokenStatus(displayToken, vm.displayAddress);
   const refresh = st.refetch;
 
   // Use UP's actual chain for display if available, else fallback to token config
@@ -77,7 +76,14 @@ export default function HomePage() {
           <StatusCard token={displayToken} status={st} chain={chain} onRefresh={refresh} />
 
           {/* Gate + Mint */}
-          <ActionCard token={displayToken} status={st} chain={chain} onRefetch={refresh} userAddress={user} isViewMode={vm.isViewMode} />
+          <ActionCard
+            token={displayToken}
+            status={st}
+            chain={chain}
+            onRefetch={refresh}
+            displayAddress={vm.displayAddress}
+            walletAddress={vm.walletAddress}
+          />
 
           {/* Holders */}
           <HoldersCard token={displayToken} />

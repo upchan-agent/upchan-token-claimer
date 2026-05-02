@@ -18,6 +18,7 @@ interface Props {
 /**
  * Unified condition list component.
  * Renders all gate types in the same format.
+ * Follow button uses btn-primary (Apple Blue) for visual consistency.
  */
 export function UnknownGate({ conditions }: Props) {
   const { provider, accounts, isConnected } = useUpProvider();
@@ -60,7 +61,7 @@ export function UnknownGate({ conditions }: Props) {
         </div>
       ))}
 
-      {/* Follow button */}
+      {/* Follow button — Apple Blue primary style */}
       {followCond && !followCond.passed && isConnected && (
         <FollowButton target={followCond.target} />
       )}
@@ -80,7 +81,7 @@ function FollowButton({ target }: { target: string | null | undefined }) {
       <button
         onClick={follow}
         disabled={isFollowing || !target}
-        className="btn btn-secondary btn-lg"
+        className="btn btn-primary btn-lg"
       >
         {isFollowing ? 'Following...' : 'Follow on LUKSO'}
       </button>

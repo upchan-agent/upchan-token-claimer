@@ -12,22 +12,37 @@ interface Props {
   status: TokenStatus;
   chain: { name: string; explorer: string };
   onRefetch: () => void;
-  userAddress?: `0x${string}` | null;
-  isViewMode?: boolean;
+  displayAddress?: `0x${string}` | null;
+  walletAddress?: `0x${string}` | null;
 }
 
-export function ActionCard({ token, status, chain, onRefetch, userAddress, isViewMode }: Props) {
+export function ActionCard({ token, status, chain, onRefetch, displayAddress, walletAddress }: Props) {
   const { provider, accounts, isConnected } = useUpProvider();
-  const walletUser = accounts[0] || null;
-  const user = walletUser; // mint/execute always uses connected wallet only
+  const connectedWallet = accounts[0] || null;
 
-  const { mint, isMinting, txHash, error: me } = useMint(token, user, provider, onRefetch);
+  // Actions always use the connected wallet
+  const actionUser = connectedWallet;
+  const { mint, isMinting, txHash, error: me } = useMint(token, actionUser, provider, onRefetch);
 
-  // ─── Mint state ───
+  // ─── Display context ───
+  const isViewingOther = !!displayAddress && !!connectedWallet && displayAddress !== connectedWallet;
   const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
 
   const renderMintState = () => {
-    if (!isConnected && !isViewMode) {
+    // Not connected — show connect prompt
+    if (!connectedWallet) {
+      if (displayAddress) {
+        // Searching without wallet: show claimed status + connect prompt
+        if (status.userBalance > 0) {
+          return (
+            <StatusMessage
+              variant="claimed"
+              title="Claimed ✓"
+              caption={`${displayAddress.slice(0, 6)}…${displayAddress.slice(-4)} owns ${status.userBalance}`}
+            />
+          );
+        }
+      }
       return (
         <p className="text-caption empty-state">
           <EmojiText>Connect 🆙</EmojiText>
@@ -35,25 +50,47 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
       );
     }
 
-    if (isViewMode) {
-      if (status.userBalance > 0) {
-        return (
+    // Connected but viewing someone else's profile
+    if (isViewingOther) {
+      // Show their claim status
+      const otherContent = status.userBalance > 0
+        ? (
           <StatusMessage
             variant="claimed"
             title="Claimed ✓"
-            caption={`${status.userBalance} token${status.userBalance > 1 ? 's' : ''}`}
+            caption={`${displayAddress!.slice(0, 6)}…${displayAddress!.slice(-4)} owns ${status.userBalance}`}
+          />
+        )
+        : (
+          <StatusMessage
+            variant="unavailable"
+            title="Not Claimed"
+            caption={`${displayAddress!.slice(0, 6)}…${displayAddress!.slice(-4)} hasn't claimed`}
           />
         );
+
+      // If the connected wallet can also mint, show a mini action
+      if (status.canMint && !isAtMaxBalance) {
+        return (
+          <>
+            {otherContent}
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={mint}
+                disabled={isMinting}
+                className="btn btn-primary"
+              >
+                {isMinting ? 'Claiming...' : 'Mint for Yourself'}
+              </button>
+            </div>
+          </>
+        );
       }
-      return (
-        <StatusMessage
-          variant="unavailable"
-          title="View Mode"
-          caption={`${userAddress?.slice(0, 6)}…${userAddress?.slice(-4)} — not claimed`}
-        />
-      );
+
+      return otherContent;
     }
 
+    // Connected, viewing connected wallet — full mint UI
     if (isAtMaxBalance) {
       return (
         <StatusMessage
@@ -107,15 +144,18 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
 
   return (
     <div className="card anim anim-d3">
-      {/* Gate section — always visible, shows conditions even before connect */}
+      {/* Eligibility — always visible */}
       <div className="card-section card-section--center card-block--lg">
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
-        <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={userAddress} />
+        {/* Wrapper div guarantees a stable 2nd child for :last-child CSS */}
+        <div>
+          <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} />
+        </div>
       </div>
 
-      {/* Mint section — opacity 0 while loading data for connected users */}
-      <div className="card-section card-block--md" style={{
-        opacity: (!isConnected && !isViewMode) || !status.isLoading ? 1 : 0,
+      {/* Claim — opacity 0 while loading for connected users */}
+      <div className="card-section card-section--center card-block--md" style={{
+        opacity: (!connectedWallet && !displayAddress) || !status.isLoading ? 1 : 0,
         transition: 'opacity 200ms ease',
       }}>
         <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
@@ -124,15 +164,7 @@ export function ActionCard({ token, status, chain, onRefetch, userAddress, isVie
 
       {/* TX hash */}
       {txHash && (
-        <div style={{
-          marginTop: 'var(--space-xs)',
-          padding: 'var(--space-xs) 10px',
-          background: 'rgba(0, 0, 0, 0.03)',
-          borderRadius: 'var(--radius-md)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-xs)',
-        }}>
+        <div className="tx-hash">
           <span className="text-micro">
             {txHash.slice(0, 10)}…{txHash.slice(-6)}
           </span>

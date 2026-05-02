@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
 import { TokenConfig, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS } from '@/config/tokens';
@@ -25,6 +25,18 @@ export interface TokenStatus {
   refetch: () => Promise<void>;
 }
 
+interface ServerData {
+  totalSupply: number;
+  supplyCap: number;
+  isMintable: boolean;
+  mintingDisabled: boolean;
+  isSoulbound: boolean;
+  revokable: boolean;
+  balanceCap: number;
+  isSupplyCapFixed: boolean;
+  mintGate: `0x${string}`;
+}
+
 const TOKEN_ABI = [
   'function totalSupply() view returns (uint256)',
   'function isMintable() view returns (bool)',
@@ -41,7 +53,21 @@ const TOKEN_ABI = [
 
 const DEFAULT_GATE = '0x0000000000000000000000000000000000000000' as const;
 
-async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` | null) {
+const SERVER_DEFAULTS: ServerData = {
+  totalSupply: 0,
+  supplyCap: 0,
+  isMintable: false,
+  mintingDisabled: false,
+  isSoulbound: true,
+  revokable: false,
+  balanceCap: 0,
+  isSupplyCapFixed: false,
+  mintGate: DEFAULT_GATE,
+};
+
+// ─── Server data: token-level state (no user dependency) ───
+
+async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const chain = CHAINS[token.chainId];
   if (!chain) throw new Error('Unsupported chain');
   const p = new ethers.JsonRpcProvider(chain.rpc);
@@ -59,71 +85,122 @@ async function fetchTokenStatus(token: TokenConfig, userAddress: `0x${string}` |
     c.mintGate().catch(() => DEFAULT_GATE),
   ]);
 
-  let userBalance = 0;
-
-  if (userAddress) {
-    const [bal] = await Promise.all([
-      c.balanceOf(userAddress).catch(() => 0),
-    ]);
-    userBalance = Number(bal);
-  }
-
-  const mintGate = ethers.getAddress(mg) as `0x${string}`;
-  const supplyCap = Number(fsc) || Infinity;
-
-  let canMintViaGate = true;
-  if (userAddress && mintGate !== DEFAULT_GATE) {
-    try {
-      const gateContract = new ethers.Contract(mintGate, GATE_ABI, p);
-      canMintViaGate = await gateContract.canMint(userAddress, userAddress, 1);
-    } catch {
-      canMintViaGate = false;
-    }
-  }
-
   return {
     totalSupply: Number(ts),
-    supplyCap,
-    userBalance,
+    supplyCap: Number(fsc) || Infinity,
     isMintable: !!im,
     mintingDisabled: !!md,
     isSoulbound: !!isb,
     revokable: !!rev,
     balanceCap: Number(tbc),
     isSupplyCapFixed: !!iscf,
-    isFollowing: false,
-    mintGate,
-    canMint: !!im && canMintViaGate && (Number(tbc) === 0 || userBalance < Number(tbc)) && Number(ts) < supplyCap,
+    mintGate: ethers.getAddress(mg) as `0x${string}`,
   };
 }
 
+// ─── Hook ────────────────────────────────────────────────
+
+/**
+ * useTokenStatus — token + user data with 3-tier caching:
+ *
+ * 1. Server query (['token-server', proxy, chainId]):
+ *    Token-level state — re-fetched only when token changes
+ *
+ * 2. Balance query (['token-balance', proxy, chainId, userAddress]):
+ *    User-specific balance — re-fetched when userAddress changes
+ *
+ * 3. Gate query (['token-gate', mintGate, userAddress, chainId]):
+ *    Gate permission check — depends on server data, re-enabled when user changes
+ *
+ * Result: wallet connect/disconnect does NOT re-fetch token-level data.
+ */
 export function useTokenStatus(
   token: TokenConfig | null,
   userAddress: `0x${string}` | null
 ): TokenStatus {
-  const query = useQuery({
-    queryKey: ['token-status', token?.proxy, token?.chainId, userAddress],
-    queryFn: () => fetchTokenStatus(token!, userAddress),
+  // Tier 1: Token-level server data (stable key — no userAddress dependency)
+  const serverQuery = useQuery({
+    queryKey: ['token-server', token?.proxy, token?.chainId],
+    queryFn: () => fetchServerData(token!),
     enabled: !!token,
   });
+  const server: ServerData = serverQuery.data ?? SERVER_DEFAULTS;
 
-  const defaults = {
-    totalSupply: 0, supplyCap: 0, userBalance: 0,
-    isMintable: false, mintingDisabled: false,
-    isSoulbound: true, revokable: false, balanceCap: 0,
-    isSupplyCapFixed: false, isFollowing: false,
-    mintGate: DEFAULT_GATE as `0x${string}`,
-    canMint: false,
-  };
+  // Tier 2: User balance (re-fetches when userAddress changes)
+  const balanceQuery = useQuery({
+    queryKey: ['token-balance', token?.proxy, token?.chainId, userAddress],
+    queryFn: () => fetchUserBalance(token!, userAddress!),
+    enabled: !!token && !!userAddress,
+  });
+  const userBalance = balanceQuery.data ?? 0;
 
-  return {
-    ...defaults,
-    ...query.data,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    error: query.error?.message ?? null,
-    refetch: () => query.refetch().then(() => {}),
-  } as TokenStatus;
+  // Tier 3: Gate permissions (depends on server mintGate + userAddress)
+  const gateQuery = useQuery({
+    queryKey: ['token-gate', server.mintGate, token?.chainId, userAddress],
+    queryFn: () => fetchGateCanMint(server.mintGate, userAddress!, token!.chainId),
+    enabled: !!token && !!userAddress && server.mintGate !== DEFAULT_GATE,
+  });
+  const canMintViaGate = gateQuery.data ?? true;
+
+  // ─── Merge all tiers into single TokenStatus ───
+  const merged: TokenStatus = useMemo(() => ({
+    ...server,
+    userBalance,
+    isFollowing: false,
+    canMint:
+      server.isMintable &&
+      !server.mintingDisabled &&
+      canMintViaGate &&
+      (server.balanceCap === 0 || userBalance < server.balanceCap) &&
+      server.totalSupply < server.supplyCap,
+    isLoading: serverQuery.isLoading,
+    isFetching:
+      serverQuery.isFetching || balanceQuery.isFetching || gateQuery.isFetching,
+    error:
+      serverQuery.error?.message ??
+      balanceQuery.error?.message ??
+      gateQuery.error?.message ??
+      null,
+    refetch: async () => {
+      await Promise.all([
+        serverQuery.refetch(),
+        balanceQuery.refetch(),
+        gateQuery.refetch(),
+      ]);
+    },
+  }), [server, userBalance, canMintViaGate, serverQuery.isLoading, serverQuery.isFetching,
+      balanceQuery.isFetching, gateQuery.isFetching, serverQuery.error,
+      balanceQuery.error, gateQuery.error, serverQuery.refetch,
+      balanceQuery.refetch, gateQuery.refetch]);
+
+  return merged;
+}
+
+// ─── Separate tiny fetchers for query isolation ───
+
+async function fetchUserBalance(token: TokenConfig, userAddress: string): Promise<number> {
+  const chain = CHAINS[token.chainId];
+  if (!chain) return 0;
+  const p = new ethers.JsonRpcProvider(chain.rpc);
+  const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
+  const [bal] = await Promise.all([c.balanceOf(userAddress).catch(() => 0)]);
+  return Number(bal);
+}
+
+async function fetchGateCanMint(
+  mintGate: string,
+  userAddress: string,
+  chainId: number
+): Promise<boolean> {
+  try {
+    const chain = CHAINS[chainId];
+    if (!chain) return false;
+    const p = new ethers.JsonRpcProvider(chain.rpc);
+    const gateContract = new ethers.Contract(mintGate, GATE_ABI, p);
+    return await gateContract.canMint(userAddress, userAddress, 1);
+  } catch {
+    return false;
+  }
 }
 
 // ─── Mint ────────────────────────────────────────────────

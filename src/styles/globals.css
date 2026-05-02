@@ -291,16 +291,26 @@ body {
 
 /* ─── Section layout: label top-left, content below ─── */
 
-.card-section--center.section-content
+/* All card sections with centered content use the same layout pattern:
+     label (left) → content (stretch, centered) */
+.card-section--center {
+  display: flex;
+  flex-direction: column;
+}
 
 .card-section--center .section-label {
   text-align: left;
 }
 
-/* Eligibility content wrapper: stretch full width, text centered */
+/* ─── Card section content containers ───
+     card-block--md:  Mint/claim area — button centered
+     card-block--lg:  Status/eligibility area — text centered
+     Both guarantee the label stays at the top-left.        */
+
 .card-section--center.card-block--lg {
   display: flex;
   flex-direction: column;
+  min-height: 130px;
 }
 
 .card-section--center.card-block--lg > :last-child {
@@ -310,14 +320,13 @@ body {
   justify-content: center;
 }
 
-/* Mint content wrapper: stretch full width, button centered */
-.card-block--md {
+.card-section--center.card-block--md {
   display: flex;
   flex-direction: column;
   min-height: 100px;
 }
 
-.card-block--md > :last-child {
+.card-section--center.card-block--md > :last-child {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -325,16 +334,13 @@ body {
   justify-content: center;
 }
 
-/* Override full-width buttons inside card sections */
-.card-block--md .btn {
-  width: auto;
-  min-width: 140px;
+/* Single btn inside card-block--md: full-width, no min-width override */
+.card-section--center.card-block--md .btn {
+  width: 100%;
 }
 
-/* Card block: fixed min-height for stable layout */
+/* Card block: fixed min-height for stable layout (standalone, non-flex) */
 .card-block--sm { min-height: 40px; }
-.card-block--md { min-height: 100px; }
-.card-block--lg { min-height: 130px; }
 
 /* ─── Card Media (replaces .token-img-*) ─── */
 
@@ -522,6 +528,18 @@ body {
 
 .data-value.link {
   color: var(--c-accent);
+}
+
+/* ─── TX Hash display ─── */
+
+.tx-hash {
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) 10px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
 /* Supply row: progress bar as value background */

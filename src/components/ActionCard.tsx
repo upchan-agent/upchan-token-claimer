@@ -87,7 +87,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
               <button
                 onClick={mint}
                 disabled={isMinting}
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm"
               >
                 {isMinting ? 'Claiming...' : 'Mint for Yourself'}
               </button>
@@ -144,7 +144,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
       <button
         onClick={mint}
         disabled={isMinting}
-        className="btn btn-primary"
+        className="btn btn-primary btn-sm"
       >
         {isMinting ? 'Claiming...' : 'Mint NFT'}
       </button>

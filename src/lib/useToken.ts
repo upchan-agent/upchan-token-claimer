@@ -20,6 +20,7 @@ export interface TokenStatus {
   mintGate: `0x${string}`;
   canMint: boolean;
   isLoading: boolean;
+  isUserDataReady: boolean;
   isFetching: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -154,6 +155,7 @@ export function useTokenStatus(
       (server.balanceCap === 0 || userBalance < server.balanceCap) &&
       server.totalSupply < server.supplyCap,
     isLoading: serverQuery.isLoading,
+    isUserDataReady: !balanceQuery.isLoading && !gateQuery.isLoading,
     isFetching:
       serverQuery.isFetching || balanceQuery.isFetching || gateQuery.isFetching,
     error:
@@ -169,7 +171,8 @@ export function useTokenStatus(
       ]);
     },
   }), [server, userBalance, canMintViaGate, serverQuery.isLoading, serverQuery.isFetching,
-      balanceQuery.isFetching, gateQuery.isFetching, serverQuery.error,
+      balanceQuery.isFetching, gateQuery.isLoading, gateQuery.isFetching,
+      balanceQuery.isLoading, serverQuery.error,
       balanceQuery.error, gateQuery.error, serverQuery.refetch,
       balanceQuery.refetch, gateQuery.refetch]);
 

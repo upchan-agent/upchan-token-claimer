@@ -29,6 +29,15 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
   const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
 
   const renderMintState = () => {
+    // Wallet connected but user data (balance, gate) still loading
+    if (connectedWallet && !status.isUserDataReady && !status.error) {
+      return (
+        <p className="text-caption empty-state">
+          Checking account...
+        </p>
+      );
+    }
+
     // Not connected — show connect prompt
     if (!connectedWallet) {
       if (displayAddress) {
@@ -153,11 +162,8 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
         </div>
       </div>
 
-      {/* Claim — opacity 0 while loading for connected users */}
-      <div className="card-section card-section--center card-block--md" style={{
-        opacity: (!connectedWallet && !displayAddress) || !status.isLoading ? 1 : 0,
-        transition: 'opacity 200ms ease',
-      }}>
+      {/* Claim — shows loading state while user data is being fetched */}
+      <div className="card-section card-section--center card-block--md">
         <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
         {renderMintState()}
       </div>

@@ -21,8 +21,7 @@ interface Props {
  * Follow button uses btn-primary (Apple Blue) for visual consistency.
  */
 export function UnknownGate({ conditions }: Props) {
-  const { provider, accounts, isConnected } = useUpProvider();
-  const walletUser = accounts[0] || null;
+  const { isConnected } = useUpProvider();
 
   if (conditions.length === 0) return null;
 
@@ -30,31 +29,15 @@ export function UnknownGate({ conditions }: Props) {
   const followCond = conditions.find(c => c.gateType === 'follow');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2xs)' }}>
+    <div className="condition-list">
       {conditions.map((c, i) => (
-        <div key={i} style={{
-          display: 'flex', alignItems: 'center', gap: 'var(--space-xs)',
-          minHeight: 28,
-        }}>
-          {/* Status dot */}
-          <span style={{
-            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-            background: c.passed ? 'var(--c-success)' : 'var(--c-text-tertiary)',
-          }} />
-
-          {/* Label */}
-          <span className="text-micro" style={{
-            color: c.passed ? 'var(--c-success)' : 'var(--c-text-tertiary)',
-          }}>
+        <div key={i} className="condition-row">
+          <span className={`condition-dot condition-dot--${c.passed ? 'pass' : 'fail'}`} />
+          <span className={`condition-label condition-label--${c.passed ? 'pass' : 'fail'}`}>
             {c.label}
           </span>
-
-          {/* Progress (e.g. "5.0/5.0 LYX") */}
           {c.progress && (
-            <span className="text-micro" style={{
-              color: c.passed ? 'var(--c-success)' : 'var(--c-text-tertiary)',
-              marginLeft: 'auto',
-            }}>
+            <span className={`condition-progress condition-progress--${c.passed ? 'pass' : 'fail'}`}>
               {c.progress}
             </span>
           )}

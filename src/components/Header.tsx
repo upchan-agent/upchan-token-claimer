@@ -24,23 +24,22 @@ export function Header({ onViewAddress, viewAddress }: {
         }}
       />
       <header className="app-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="text-caption-bold"><EmojiText>🆙chan</EmojiText> Token Claimer</span>
+        <div className="text-caption-bold">
+          <EmojiText>🆙chan</EmojiText> Token Claimer
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <button
             onClick={() => setSearchOpen(true)}
             className="btn-icon"
-            title="Debug: View any address"
-            style={{ fontSize: 16 }}
+            title="View any address"
           >
             🔍
           </button>
         {viewAddress ? (
           <div className="view-badge">
             <span>{viewAddress.slice(0, 6)}…{viewAddress.slice(-4)}</span>
-            <button onClick={() => onViewAddress?.(null)} className="btn-icon" style={{ fontSize: 10 }}>✕</button>
+            <button onClick={() => onViewAddress?.(null)} className="btn-icon">✕</button>
           </div>
         ) : isDetecting ? (
           <span className="text-micro">...</span>

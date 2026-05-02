@@ -790,6 +790,47 @@ body {
   color: var(--c-text-tertiary);
 }
 
+/* ─── Eligibility grid (left: conditions, right: profile card) ─── */
+
+.eligibility-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.eligibility-conditions {
+  min-width: 0;
+}
+
+.eligibility-profile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 180px;
+}
+
+.eligibility-profile .holder-avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.eligibility-profile .holder-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.eligibility-profile .holder-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* ─── Gate / Eligibility conditions ─── */
 
 .condition-list {

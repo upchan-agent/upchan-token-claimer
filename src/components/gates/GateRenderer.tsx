@@ -6,6 +6,7 @@ import { TokenConfig, GATE_ABI, COMPOSITE_ABI, CHAINS } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
 import { NoGate } from './NoGate';
 import { UnknownGate, Condition } from './UnknownGate';
+import { ProfileCard } from './ProfileCard';
 
 interface Props {
   token: TokenConfig;
@@ -51,11 +52,9 @@ async function fetchConditions(
     const p = new ethers.JsonRpcProvider(chain.rpc);
     const gate = new ethers.Contract(gateAddress, GATE_ABI, p);
 
-    // Always get gate type even without user
     const gtype: string = await gate.gateType();
     const type = gtype.toLowerCase();
 
-    // Always call check() — 0x01 fallback for unconnected users
     const checkUser = user || '0x0000000000000000000000000000000000000001';
     let passed = false;
     let label = '';
@@ -67,9 +66,7 @@ async function fetchConditions(
       progress = pr;
     } catch { /* check may fail */ }
 
-    // Build conditions based on gate type
     if (type === 'composite') {
-      // Fetch children + operator
       let children: string[] = [];
       try {
         const cg = new ethers.Contract(gateAddress, GATE_ABI.concat(COMPOSITE_ABI), p);
@@ -78,7 +75,6 @@ async function fetchConditions(
         return [];
       }
 
-      // Parse progress string into individual conditions
       const parsed: Condition[] = [];
       if (progress) {
         const parts = progress.split(' | ');
@@ -89,7 +85,6 @@ async function fetchConditions(
         }
       }
 
-      // Enhance with child gate types (for follow detection)
       for (let i = 0; i < children.length && i < parsed.length; i++) {
         try {
           const childGate = new ethers.Contract(children[i], GATE_ABI, p);
@@ -107,7 +102,7 @@ async function fetchConditions(
     // Single gate: return one condition
     const conditions: Condition[] = [{
       passed,
-      label: label || (type === 'follow' ? 'Must follow on LUKSO' : 'Unknown condition'),
+      label: label || (type === 'follow' ? 'Must follow' : 'Unknown condition'),
       progress,
       gateType: type,
       target: type === 'follow' ? await fetchTarget(gateAddress, chainId) : null,
@@ -140,5 +135,35 @@ export function GateRenderer({ token, status, onRefetch, userAddress }: Props) {
 
   if (!hasGate) return <NoGate />;
 
-  return <UnknownGate conditions={conditions} />;
+  // Separate follow condition from others — follow gets its own profile card
+  const followCond = conditions.find(c => c.gateType === 'follow');
+  const otherConds = conditions.filter(c => c.gateType !== 'follow');
+
+  return (
+    <div className="eligibility-grid">
+      <div className="eligibility-conditions">
+        <UnknownGate conditions={otherConds} />
+        {/* Follow condition label on the left (profile card on the right) */}
+        {followCond && (
+          <div className="condition-list">
+            <div className="condition-row">
+              <span className={`condition-dot condition-dot--${followCond.passed ? 'pass' : 'fail'}`} />
+              <span className={`condition-label condition-label--${followCond.passed ? 'pass' : 'fail'}`}>
+                Must follow
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right column: profile card */}
+      {followCond && (
+        <ProfileCard
+          target={followCond.target}
+          chainId={token.chainId}
+          onFollowDone={onRefetch}
+        />
+      )}
+    </div>
+  );
 }

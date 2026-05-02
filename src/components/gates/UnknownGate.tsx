@@ -1,8 +1,5 @@
 'use client';
 
-import { useUpProvider } from '@/lib/up-provider';
-import { useFollow } from '@/lib/useToken';
-
 export interface Condition {
   passed: boolean;
   label: string;
@@ -18,15 +15,10 @@ interface Props {
 /**
  * Unified condition list component.
  * Renders all gate types in the same format.
- * Follow button uses btn-primary (Apple Blue) for visual consistency.
+ * Follow conditions are handled by ProfileCard separately.
  */
 export function UnknownGate({ conditions }: Props) {
-  const { isConnected } = useUpProvider();
-
   if (conditions.length === 0) return null;
-
-  // Find follow condition for follow button
-  const followCond = conditions.find(c => c.gateType === 'follow');
 
   return (
     <div className="condition-list">
@@ -43,32 +35,6 @@ export function UnknownGate({ conditions }: Props) {
           )}
         </div>
       ))}
-
-      {/* Follow button — Apple Blue primary style */}
-      {followCond && !followCond.passed && isConnected && (
-        <FollowButton target={followCond.target} />
-      )}
-    </div>
-  );
-}
-
-function FollowButton({ target }: { target: string | null | undefined }) {
-  const { provider, accounts } = useUpProvider();
-  const walletUser = accounts[0] || null;
-  const { follow, isFollowing, error } = useFollow(
-    walletUser, provider, target as `0x${string}`, () => {}
-  );
-
-  return (
-    <div>
-      <button
-        onClick={follow}
-        disabled={isFollowing || !target}
-        className="btn btn-primary btn-sm"
-      >
-        {isFollowing ? 'Following...' : 'Follow on LUKSO'}
-      </button>
-      {error && <div className="error-box" style={{ marginTop: 4 }}>{error}</div>}
     </div>
   );
 }

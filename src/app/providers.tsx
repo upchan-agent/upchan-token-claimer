@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UPProvider } from '@/lib/up-provider';
+import { TxProvider } from '@/lib/tx-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = useState(() => new QueryClient({
@@ -18,7 +19,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={qc}>
       <Suspense fallback={null}>
-        <UPProvider>{children}</UPProvider>
+        <UPProvider>
+          <TxProvider>{children}</TxProvider>
+        </UPProvider>
       </Suspense>
     </QueryClientProvider>
   );

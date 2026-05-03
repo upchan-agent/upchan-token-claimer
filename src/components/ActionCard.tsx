@@ -17,12 +17,12 @@ interface Props {
 }
 
 export function ActionCard({ token, status, chain, onRefetch, displayAddress, walletAddress }: Props) {
-  const { provider, accounts, isConnected } = useUpProvider();
+  const { accounts, isConnected } = useUpProvider();
   const connectedWallet = accounts[0] || null;
 
   // Actions always use the connected wallet
   const actionUser = connectedWallet;
-  const { mint, isMinting, txHash, error: me } = useMint(token, actionUser, provider, onRefetch);
+  const { mint, isPending } = useMint(token, actionUser, onRefetch);
 
   // ─── Display context ───
   const isViewingOther = !!displayAddress && !!connectedWallet && displayAddress !== connectedWallet;
@@ -86,10 +86,10 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
             <div style={{ marginTop: 8 }}>
               <button
                 onClick={mint}
-                disabled={isMinting}
+                disabled={isPending}
                 className="btn btn-primary btn-sm"
               >
-                {isMinting ? 'Claiming...' : 'Mint for Yourself'}
+                {isPending ? 'Claiming...' : 'Mint for Yourself'}
               </button>
             </div>
           </>
@@ -143,10 +143,10 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
     return (
       <button
         onClick={mint}
-        disabled={isMinting}
+        disabled={isPending}
         className="btn btn-primary btn-sm"
       >
-        {isMinting ? 'Claiming...' : 'Mint NFT'}
+        {isPending ? 'Claiming...' : 'Mint NFT'}
       </button>
     );
   };
@@ -171,26 +171,6 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
         </div>
       </div>
 
-      {/* TX hash */}
-      {txHash && (
-        <div className="tx-hash">
-          <span className="text-micro">
-            {txHash.slice(0, 10)}…{txHash.slice(-6)}
-          </span>
-          <a
-            href={`${chain.explorer}/tx/${txHash}`}
-            target="_blank"
-            className="link text-micro"
-          >
-            ↗
-          </a>
-        </div>
-      )}
-
-      {/* Error */}
-      {me && (
-        <div className="error-box">{me}</div>
-      )}
     </div>
   );
 }

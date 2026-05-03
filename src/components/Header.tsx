@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useUpProvider } from '@/lib/up-provider';
 import { EmojiText } from './EmojiText';
 import { SearchPopup } from './SearchPopup';
+import { TxIndicator } from './TxIndicator';
 
 export function Header({ onViewAddress, viewAddress }: {
   onViewAddress?: (addr: `0x${string}` | null) => void;
@@ -36,6 +37,7 @@ export function Header({ onViewAddress, viewAddress }: {
           >
             🔍
           </button>
+          <TxIndicator />
         {viewAddress ? (
           <div className="view-badge">
             <span>{viewAddress.slice(0, 6)}…{viewAddress.slice(-4)}</span>

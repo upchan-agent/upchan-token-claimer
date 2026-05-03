@@ -522,16 +522,156 @@ body {
   color: var(--c-accent);
 }
 
-/* ─── TX Hash display ─── */
+/* ─── TX Hash display (deprecated — use TxIndicator) ─── */
 
-.tx-hash {
-  margin-top: var(--space-xs);
-  padding: var(--space-xs) 10px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: var(--radius-md);
+/* ─── TxIndicator / TxDropdown ─── */
+
+.tx-trigger {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.03);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  justify-content: center;
+}
+
+.tx-trigger:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.tx-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-text-tertiary);
+  flex-shrink: 0;
+}
+
+.tx-dot--pending {
+  background: var(--c-accent);
+  animation: tx-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes tx-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+.tx-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 7px;
+}
+
+.tx-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 280px;
+  max-width: 340px;
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-2xs) 0;
+  z-index: 200;
+}
+
+.tx-empty {
+  padding: var(--space-lg) var(--space-md);
+  text-align: center;
+  font-size: 12px;
+  color: var(--c-text-tertiary);
+}
+
+.tx-row-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tx-row-link:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.tx-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.tx-row-icon {
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.tx-row--pending .tx-row-icon { color: var(--c-accent); }
+.tx-row--confirmed .tx-row-icon { color: var(--c-success); }
+.tx-row--failed .tx-row-icon { color: var(--c-error); }
+
+.tx-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tx-row-label {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-row-error {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--c-error);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-row-hash {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--c-accent);
+  font-family: monospace;
+}
+
+.tx-row-ago {
+  flex-shrink: 0;
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--c-text-tertiary);
+  margin-top: 1px;
 }
 
 /* Supply row: progress bar as value background */

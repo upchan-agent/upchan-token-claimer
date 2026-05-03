@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
 import { TokenConfig, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS } from '@/config/tokens';
 import { EIP1193Provider } from './up-provider';
+import { useTxContext } from './tx-context';
 
 export interface TokenStatus {
   totalSupply: number;
@@ -234,87 +235,58 @@ async function fetchGateCanMint(
 export function useMint(
   token: TokenConfig | null,
   userAddress: `0x${string}` | null,
-  provider: EIP1193Provider | null,
   onDone?: () => void
 ) {
-  const [isMinting, setIsMinting] = useState(false);
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { sendTx } = useTxContext();
+  const [isPending, setIsPending] = useState(false);
 
   const mint = useCallback(async () => {
-    if (!token || !userAddress || !provider) { setError('Not connected'); return; }
-    setIsMinting(true); setError(null); setTxHash(null);
+    if (!token || !userAddress) return;
+    setIsPending(true);
     try {
-      const mintIface = new ethers.Interface(['function mint(address,uint256,bool,bytes)']);
-      const mintData = mintIface.encodeFunctionData('mint', [
+      const mintIface = new ethers.Interface([
+        'function mint(address,uint256,bool,bytes)',
+      ]);
+      const innerData = mintIface.encodeFunctionData('mint', [
         userAddress, BigInt(1), false, '0x',
       ]);
-      const upIface = new ethers.Interface(UP_ABI);
-      const execData = upIface.encodeFunctionData('execute', [
-        BigInt(0), token.proxy, BigInt(0), mintData,
-      ]);
-      const txHashRaw = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: userAddress, to: userAddress, data: execData }],
-      });
-      setTxHash(txHashRaw as string);
-
-      const chain = CHAINS[token.chainId];
-      if (chain) {
-        const p = new ethers.JsonRpcProvider(chain.rpc);
-        await p.waitForTransaction(txHashRaw as string, 1, 60_000);
-      }
-
+      await sendTx('Minting NFT', token.proxy, innerData, token.chainId);
       onDone?.();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Mint failed');
+    } catch {
+      // sendTx writes failure to global TxContext
     } finally {
-      setIsMinting(false);
+      setIsPending(false);
     }
-  }, [token, userAddress, provider, onDone]);
+  }, [token, userAddress, sendTx, onDone]);
 
-  return { mint, isMinting, txHash, error };
+  return { mint, isPending };
 }
 
 // ─── Follow ──────────────────────────────────────────────
 
 export function useFollow(
   userAddress: `0x${string}` | null,
-  provider: EIP1193Provider | null,
   targetProfile: `0x${string}` | null,
+  chainId: number,
   onDone?: () => void
 ) {
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { sendTx } = useTxContext();
+  const [isPending, setIsPending] = useState(false);
 
   const follow = useCallback(async () => {
-    if (!userAddress || !provider || !targetProfile) { setError('Not ready'); return; }
-    setIsFollowing(true); setError(null);
+    if (!userAddress || !targetProfile) return;
+    setIsPending(true);
     try {
       const regIface = new ethers.Interface(['function follow(address addr) external']);
-      const folData = regIface.encodeFunctionData('follow', [targetProfile]);
-      const upIface = new ethers.Interface(UP_ABI);
-      const execData = upIface.encodeFunctionData('execute', [
-        BigInt(0), LSP26_ADDRESS, BigInt(0), folData,
-      ]);
-      const txHashRaw = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: userAddress, to: userAddress, data: execData }],
-      });
-
-      if (targetProfile) {
-        const chain = CHAINS[42]; // Follow is always mainnet
-        const p = new ethers.JsonRpcProvider(chain.rpc);
-        await p.waitForTransaction(txHashRaw as string, 1, 60_000);
-      }
-
+      const innerData = regIface.encodeFunctionData('follow', [targetProfile]);
+      await sendTx('Following Profile', LSP26_ADDRESS, innerData, chainId);
       onDone?.();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Follow failed');
+    } catch {
+      // sendTx writes failure to global TxContext
     } finally {
-      setIsFollowing(false);
+      setIsPending(false);
     }
-  }, [userAddress, provider, targetProfile, onDone]);
+  }, [userAddress, targetProfile, chainId, sendTx, onDone]);
 
-  return { follow, isFollowing, error };
+  return { follow, isPending };
 }

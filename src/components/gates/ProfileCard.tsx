@@ -28,8 +28,8 @@ export function ProfileCard({ target, chainId, onFollowDone }: Props) {
   const { data: profile, isLoading } = useProfileMetadata(target, chainId);
   const { provider, accounts, isConnected } = useUpProvider();
   const walletUser = accounts[0] || null;
-  const { follow, isFollowing: followPending, error } = useFollow(
-    walletUser, provider, target as `0x${string}`, onFollowDone
+  const { follow, isPending: followPending } = useFollow(
+    walletUser, target as `0x${string}`, chainId, onFollowDone
   );
 
   // Check on-chain follow status — no flash, shows correct state after query resolves
@@ -100,7 +100,7 @@ export function ProfileCard({ target, chainId, onFollowDone }: Props) {
         )}
       </div>
 
-      {error && <div className="error-box">{error}</div>}
+
     </div>
   );
 }

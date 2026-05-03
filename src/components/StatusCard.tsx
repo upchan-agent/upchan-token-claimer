@@ -160,7 +160,7 @@ export function StatusCard({ token, status, chain }: Props) {
             <>
               <StatusIcon value="yes" />
               <a
-                href={assetUrl(status.mintGate, token.chainId)}
+                href={`${chain.explorer}/address/${status.mintGate}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="data-value link"
@@ -183,7 +183,7 @@ export function StatusCard({ token, status, chain }: Props) {
             <>
               <StatusIcon value="yes" />
               <a
-                href={assetUrl(status.holdGate, token.chainId)}
+                href={`${chain.explorer}/address/${status.holdGate}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="data-value link"

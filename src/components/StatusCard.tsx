@@ -1,7 +1,7 @@
 'use client';
 
 import { ethers } from 'ethers';
-import { TokenConfig, assetUrl } from '@/config/tokens';
+import { TokenConfig, assetUrl, profileUrl } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
 import { YesIcon, NoIcon, DashIcon } from './Icons';
 import { EmojiText } from './EmojiText';
@@ -76,22 +76,6 @@ export function StatusCard({ token, status, chain }: Props) {
       value: load ? 'none' : (status.isSupplyCapFixed ? 'yes' : 'none'),
       display: load ? '-' : (status.isSupplyCapFixed ? 'Fixed' : 'Flexible'),
     },
-    {
-      label: 'Mint Gate',
-      value: load ? 'none' : (status.mintGate !== '0x0000000000000000000000000000000000000000' ? 'yes' : 'none'),
-      display: load ? '-'
-        : status.mintGate !== '0x0000000000000000000000000000000000000000'
-          ? status.mintGate.slice(0, 10) + '…' + status.mintGate.slice(-4) + (status.isMintGateFixed ? ' 🔒' : '')
-          : '-',
-    },
-    {
-      label: 'Hold Gate',
-      value: load ? 'none' : (status.holdGate !== '0x0000000000000000000000000000000000000000' ? 'yes' : 'none'),
-      display: load ? '-'
-        : status.holdGate !== '0x0000000000000000000000000000000000000000'
-          ? status.holdGate.slice(0, 10) + '…' + status.holdGate.slice(-4) + (status.isHoldGateFixed ? ' 🔒' : '')
-          : '-',
-    },
   ];
 
   return (
@@ -119,7 +103,7 @@ export function StatusCard({ token, status, chain }: Props) {
             <span className="data-value">-</span>
           ) : (
             <a
-              href={`https://universalprofile.cloud/${status.owner}`}
+              href={profileUrl(status.owner)}
               target="_blank"
               rel="noopener noreferrer"
               className="data-value link"
@@ -163,6 +147,52 @@ export function StatusCard({ token, status, chain }: Props) {
             <span className="data-value">{p.display}</span>
           </div>
         ))}
+
+        {/* Mint Gate */}
+        <div className="data-row">
+          <span className="data-label">Mint Gate</span>
+          {load || status.mintGate === '0x0000000000000000000000000000000000000000' ? (
+            <>
+              <StatusIcon value="none" />
+              <span className="data-value">-</span>
+            </>
+          ) : (
+            <>
+              <StatusIcon value="yes" />
+              <a
+                href={assetUrl(status.mintGate, token.chainId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="data-value link"
+              >
+                {status.mintGate.slice(0, 10)}…{status.mintGate.slice(-4)}{status.isMintGateFixed ? ' 🔒' : ''} ↗
+              </a>
+            </>
+          )}
+        </div>
+
+        {/* Hold Gate */}
+        <div className="data-row">
+          <span className="data-label">Hold Gate</span>
+          {load || status.holdGate === '0x0000000000000000000000000000000000000000' ? (
+            <>
+              <StatusIcon value="none" />
+              <span className="data-value">-</span>
+            </>
+          ) : (
+            <>
+              <StatusIcon value="yes" />
+              <a
+                href={assetUrl(status.holdGate, token.chainId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="data-value link"
+              >
+                {status.holdGate.slice(0, 10)}…{status.holdGate.slice(-4)}{status.isHoldGateFixed ? ' 🔒' : ''} ↗
+              </a>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Error */}

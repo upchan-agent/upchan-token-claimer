@@ -1,9 +1,11 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { ethers } from 'ethers';
 import { useProfileMetadata } from '@/lib/useProfileMetadata';
 import { useFollow } from '@/lib/useToken';
 import { useUpProvider } from '@/lib/up-provider';
-import { profileUrl } from '@/config/tokens';
+import { CHAINS, LSP26_ADDRESS, profileUrl } from '@/config/tokens';
 import { EmojiText } from '../EmojiText';
 
 interface Props {
@@ -26,9 +28,26 @@ export function ProfileCard({ target, chainId, onFollowDone }: Props) {
   const { data: profile, isLoading } = useProfileMetadata(target, chainId);
   const { provider, accounts, isConnected } = useUpProvider();
   const walletUser = accounts[0] || null;
-  const { follow, isFollowing, error } = useFollow(
+  const { follow, isFollowing: followPending, error } = useFollow(
     walletUser, provider, target as `0x${string}`, onFollowDone
   );
+
+  // Check on-chain follow status — no flash, shows correct state after query resolves
+  const { data: alreadyFollows } = useQuery({
+    queryKey: ['is-following', walletUser, target, chainId],
+    queryFn: async () => {
+      if (!walletUser) return false;
+      const chain = CHAINS[chainId];
+      if (!chain) return false;
+      const p = new ethers.JsonRpcProvider(chain.rpc);
+      const c = new ethers.Contract(LSP26_ADDRESS, [
+        'function isFollowing(address,address) view returns (bool)',
+      ], p);
+      return c.isFollowing(walletUser, target);
+    },
+    enabled: !!walletUser && !!target,
+    staleTime: 60 * 1000,
+  });
 
   if (!target) return null;
 
@@ -64,14 +83,19 @@ export function ProfileCard({ target, chainId, onFollowDone }: Props) {
         >
           {target.slice(0, 6)}…{target.slice(-4)} ↗
         </a>
-        {isConnected && (
+        {isConnected && alreadyFollows === true && (
+          <span className="text-micro" style={{ marginTop: 4, color: 'var(--c-success)' }}>
+            Following ✓
+          </span>
+        )}
+        {isConnected && alreadyFollows === false && (
           <button
             onClick={follow}
-            disabled={isFollowing}
+            disabled={followPending}
             className="btn btn-primary btn-sm"
             style={{ marginTop: 4 }}
           >
-            {isFollowing ? 'Following...' : <EmojiText>Follow</EmojiText>}
+            {followPending ? 'Following...' : <EmojiText>Follow</EmojiText>}
           </button>
         )}
       </div>

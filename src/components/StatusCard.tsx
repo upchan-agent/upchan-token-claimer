@@ -76,6 +76,22 @@ export function StatusCard({ token, status, chain }: Props) {
       value: load ? 'none' : (status.isSupplyCapFixed ? 'yes' : 'none'),
       display: load ? '-' : (status.isSupplyCapFixed ? 'Fixed' : 'Flexible'),
     },
+    {
+      label: 'Mint Gate',
+      value: load ? 'none' : (status.mintGate !== '0x0000000000000000000000000000000000000000' ? 'yes' : 'none'),
+      display: load ? '-'
+        : status.mintGate !== '0x0000000000000000000000000000000000000000'
+          ? status.mintGate.slice(0, 10) + '…' + status.mintGate.slice(-4) + (status.isMintGateFixed ? ' 🔒' : '')
+          : '-',
+    },
+    {
+      label: 'Hold Gate',
+      value: load ? 'none' : (status.holdGate !== '0x0000000000000000000000000000000000000000' ? 'yes' : 'none'),
+      display: load ? '-'
+        : status.holdGate !== '0x0000000000000000000000000000000000000000'
+          ? status.holdGate.slice(0, 10) + '…' + status.holdGate.slice(-4) + (status.isHoldGateFixed ? ' 🔒' : '')
+          : '-',
+    },
   ];
 
   return (
@@ -94,6 +110,23 @@ export function StatusCard({ token, status, chain }: Props) {
           >
             {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)} ↗
           </a>
+        </div>
+
+        {/* Owner */}
+        <div className="data-row">
+          <span className="data-label">Owner</span>
+          {load ? (
+            <span className="data-value">-</span>
+          ) : (
+            <a
+              href={`https://universalprofile.cloud/${status.owner}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="data-value link"
+            >
+              {status.owner.slice(0, 10)}…{status.owner.slice(-4)} ↗
+            </a>
+          )}
         </div>
 
         {/* Network */}

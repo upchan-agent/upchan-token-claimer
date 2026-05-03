@@ -18,6 +18,10 @@ export interface TokenStatus {
   isSupplyCapFixed: boolean;
   isFollowing: boolean;
   mintGate: `0x${string}`;
+  holdGate: `0x${string}`;
+  isMintGateFixed: boolean;
+  isHoldGateFixed: boolean;
+  owner: `0x${string}`;
   canMint: boolean;
   isLoading: boolean;
   isUserDataReady: boolean;
@@ -36,6 +40,10 @@ interface ServerData {
   balanceCap: number;
   isSupplyCapFixed: boolean;
   mintGate: `0x${string}`;
+  holdGate: `0x${string}`;
+  isMintGateFixed: boolean;
+  isHoldGateFixed: boolean;
+  owner: `0x${string}`;
 }
 
 const TOKEN_ABI = [
@@ -50,6 +58,9 @@ const TOKEN_ABI = [
   'function mintGate() view returns (address)',
   'function owner() view returns (address)',
   'function balanceOf(address) view returns (uint256)',
+  'function holdGate() view returns (address)',
+  'function isMintGateFixed() view returns (bool)',
+  'function isHoldGateFixed() view returns (bool)',
 ];
 
 const DEFAULT_GATE = '0x0000000000000000000000000000000000000000' as const;
@@ -64,6 +75,10 @@ const SERVER_DEFAULTS: ServerData = {
   balanceCap: 0,
   isSupplyCapFixed: false,
   mintGate: DEFAULT_GATE,
+  holdGate: DEFAULT_GATE,
+  isMintGateFixed: false,
+  isHoldGateFixed: false,
+  owner: DEFAULT_GATE,
 };
 
 // ─── Server data: token-level state (no user dependency) ───
@@ -74,7 +89,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
-  const [ts, im, md, isb, rev, fsc, tbc, iscf, mg] = await Promise.all([
+  const [ts, im, md, isb, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own] = await Promise.all([
     c.totalSupply().catch(() => 0),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
@@ -84,6 +99,10 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     c.tokenBalanceCap().catch(() => 0),
     c.isSupplyCapFixed().catch(() => false),
     c.mintGate().catch(() => DEFAULT_GATE),
+    c.holdGate().catch(() => DEFAULT_GATE),
+    c.isMintGateFixed().catch(() => false),
+    c.isHoldGateFixed().catch(() => false),
+    c.owner().catch(() => DEFAULT_GATE),
   ]);
 
   return {
@@ -96,6 +115,10 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     balanceCap: Number(tbc),
     isSupplyCapFixed: !!iscf,
     mintGate: ethers.getAddress(mg) as `0x${string}`,
+    holdGate: ethers.getAddress(hg) as `0x${string}`,
+    isMintGateFixed: !!mgf,
+    isHoldGateFixed: !!hgf,
+    owner: ethers.getAddress(own) as `0x${string}`,
   };
 }
 

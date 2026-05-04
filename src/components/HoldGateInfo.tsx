@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { CHAINS, GATE_ABI } from '@/config/tokens';
-import { YesIcon, NoIcon, DashIcon } from './Icons';
 
 interface Props {
   gateAddress: `0x${string}`;
@@ -19,23 +18,29 @@ interface ConditionRow {
   progress: string;
 }
 
-type PropValue = 'yes' | 'no' | 'none';
+// ─── Reusable ConditionIcon matching StatusCard's Properties ───
 
-function StatusIcon({ value }: { value: PropValue }) {
-  const size = 12;
-  switch (value) {
-    case 'yes':
-      return <span style={{ color: 'var(--c-success)', display: 'flex' }}><YesIcon size={size} /></span>;
-    case 'no':
-      return <span style={{ color: 'var(--c-text-tertiary)', display: 'flex' }}><NoIcon size={size} /></span>;
-    case 'none':
-      return <span style={{ color: 'var(--c-text-tertiary)', display: 'flex' }}><DashIcon size={size} /></span>;
-  }
+function ConditionIcon({ passed }: { passed: boolean }) {
+  const cls = passed ? 'status-icon--yes' : 'status-icon--no';
+  return (
+    <span className={cls}>
+      {passed ? (
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+          <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+        </svg>
+      ) : (
+        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+          <circle cx="12" cy="12" r="10" /><path d="M9 9l6 6M15 9l-6 6" />
+        </svg>
+      )}
+    </span>
+  );
 }
 
 /**
- * Hold gate conditions displayed as data-rows (Properties format).
- * Soulbound/Revokable attributes appended as additional data-rows.
+ * Hold gate conditions as data-rows — matches Properties format exactly.
+ * Sibling to StatusCard's Property display.
+ * Soulbound/Revokable appended as additional data-rows.
  */
 export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, isRevokable }: Props) {
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
@@ -50,10 +55,8 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
         if (!chain) return;
         const p = new ethers.JsonRpcProvider(chain.rpc);
         const gate = new ethers.Contract(gateAddress, GATE_ABI, p);
-
         const gt: string = await gate.gateType();
 
-        // RequirementsGate: parse individual conditions
         if (gt === 'requirements') {
           const REQ_ABI = [
             'function followTarget() view returns (address)',
@@ -79,11 +82,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
               const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
               ok = lspIf.decodeFunctionResult('isFollowing', r)[0];
             } catch {}
-            rows.push({
-              passed: ok,
-              label: 'Must follow',
-              progress: ok ? 'Following' : 'Not following',
-            });
+            rows.push({ passed: ok, label: 'Must follow', progress: ok ? 'Following' : 'Not following' });
           }
 
           const minBalNum = minBal as bigint;
@@ -92,8 +91,8 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
             const ok = bal >= minBalNum;
             rows.push({
               passed: ok,
-              label: `≥ ${ethers.formatEther(minBalNum)} LYX`,
-              progress: ok ? `${ethers.formatEther(bal).slice(0, 6)} LYX` : `${ethers.formatEther(bal).slice(0, 6)} LYX`,
+              label: `≥ ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
+              progress: ok ? `${ethers.formatEther(bal).slice(0, 6)} LYX` : `Need ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
             });
           }
 
@@ -107,11 +106,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
               folCount = iface.decodeFunctionResult('totalFollowersOf', r)[0] as bigint;
             } catch {}
             const ok = folCount >= minFolNum;
-            rows.push({
-              passed: ok,
-              label: `≥ ${minFolNum} followers`,
-              progress: `${folCount} / ${minFolNum}`,
-            });
+            rows.push({ passed: ok, label: `≥ ${minFolNum} followers`, progress: `${folCount} / ${minFolNum}` });
           }
 
           const reqs = tokenReqs as { token: string; minAmount: bigint }[];
@@ -124,11 +119,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
               bal = iface.decodeFunctionResult('balanceOf', res)[0] as bigint;
             } catch {}
             const ok = bal >= r.minAmount;
-            rows.push({
-              passed: ok,
-              label: `Token ≥ ${r.minAmount}`,
-              progress: ok ? 'Held' : `Need ${r.minAmount}`,
-            });
+            rows.push({ passed: ok, label: `Token ≥ ${r.minAmount}`, progress: ok ? 'Held' : `Need ${r.minAmount}` });
           }
 
           if (cancelled) return;
@@ -136,7 +127,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
           return;
         }
 
-        // Single gate: use check()
+        // Single gate
         const [, label, progress] = await gate.check(userAddress);
         if (cancelled) return;
         setConditions([{ passed: false, label: label || gt, progress }]);
@@ -148,37 +139,45 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
     return () => { cancelled = true; };
   }, [gateAddress, chainId, userAddress]);
 
+  // Conditions as data-rows (exact Properties format)
   return (
-    <div className="conditions-data-rows">
+    <div>
       {conditions.length === 0 ? (
-        <p className="data-row conditions-placeholder" style={{ minHeight: '24px', border: 'none', margin: 0 }}>
-          Loading conditions...
-        </p>
+        <div className="data-row" style={{ border: 'none' }}>
+          <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
+            Loading conditions...
+          </span>
+        </div>
       ) : (
-        conditions.map((c, i) => {
-          const val: PropValue = c.passed ? 'yes' : 'no';
-          return (
-            <div key={i} className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
-              <span className="data-label">{c.label}</span>
-              <StatusIcon value={val} />
-              <span className="data-value" style={{ fontSize: 12 }}>{c.progress}</span>
-            </div>
-          );
-        })
+        conditions.map((c, i) => (
+          <div key={i} className="data-row" style={{ border: 'none' }}>
+            <span className="data-label">{c.label}</span>
+            <ConditionIcon passed={c.passed} />
+            <span className="data-value">{c.progress}</span>
+          </div>
+        ))
       )}
-      {/* Token attributes as data-rows */}
+      {/* Token attributes appended as data-rows */}
       {isSoulbound && (
-        <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
+        <div className="data-row" style={{ border: 'none' }}>
           <span className="data-label">Soulbound</span>
-          <StatusIcon value="yes" />
-          <span className="data-value" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>Not transferable</span>
+          <span className="status-icon--yes">
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+            </svg>
+          </span>
+          <span className="data-value">Not transferable</span>
         </div>
       )}
       {isRevokable && (
-        <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
+        <div className="data-row" style={{ border: 'none' }}>
           <span className="data-label">Revokable</span>
-          <span style={{ color: 'var(--c-accent)', display: 'flex' }}><YesIcon size={12} /></span>
-          <span className="data-value" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>May lose tokens</span>
+          <span className="status-icon--yes" style={{ color: 'var(--c-accent)' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+            </svg>
+          </span>
+          <span className="data-value" style={{ color: 'var(--c-text-secondary)' }}>May lose tokens</span>
         </div>
       )}
     </div>

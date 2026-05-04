@@ -357,13 +357,16 @@ body {
 }
 
 .conditions-group-header {
-  display: block;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--c-text-secondary);
-  margin-bottom: var(--space-2xs);
+  line-height: 1.29;
+  letter-spacing: -0.016em;
+  color: var(--c-text);
+  display: block;
+}
+
+.conditions-group-header + .conditions-group-header {
+  margin-top: var(--space-xs);
 }
 
 .conditions-divider {

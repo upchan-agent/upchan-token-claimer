@@ -89,7 +89,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           <div className="conditions-divider" />
 
           {/* ─── Hold conditions ─── */}
-          <span className="conditions-group-header" style={{ marginTop: 'var(--space-xs)' }}>Hold</span>
+          <span className="conditions-group-header">Hold</span>
           <div className="conditions-group">
             {hasHoldGate ? (
               <HoldGateInfo
@@ -115,17 +115,6 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
                       </svg>
                     </span>
                     <span className="data-value">Not transferable</span>
-                  </div>
-                )}
-                {status.revokable && (
-                  <div className="data-row" style={{ border: 'none' }}>
-                    <span className="data-label">Revokable</span>
-                    <span className="status-icon--yes" style={{ color: 'var(--c-accent)' }}>
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-                        <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
-                      </svg>
-                    </span>
-                    <span className="data-value" style={{ color: 'var(--c-text-secondary)' }}>May lose tokens</span>
                   </div>
                 )}
               </div>

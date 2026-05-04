@@ -312,7 +312,7 @@ body {
 .card-section--center.card-block--xl {
   display: flex;
   flex-direction: column;
-  height: 200px;
+  min-height: 200px;
 }
 
 .card-section--center.card-block--xl > :last-child {
@@ -320,7 +320,6 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow-y: auto;
 }
 
 .card-section--center.card-block--action {

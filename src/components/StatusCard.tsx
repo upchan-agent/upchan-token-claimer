@@ -73,8 +73,8 @@ export function StatusCard({ token, status, chain }: Props) {
     },
     {
       label: 'Cap Status',
-      value: load ? 'none' : (status.isSupplyCapFixed ? 'yes' : 'none'),
-      display: load ? '-' : (status.isSupplyCapFixed ? 'Fixed' : 'Flexible'),
+      value: load ? 'none' : (status.isSupplyCapLocked ? 'yes' : 'none'),
+      display: load ? '-' : (status.isSupplyCapLocked ? 'Locked' : 'Flexible'),
     },
   ];
 
@@ -165,7 +165,7 @@ export function StatusCard({ token, status, chain }: Props) {
                 rel="noopener noreferrer"
                 className="data-value link"
               >
-                {status.mintGate.slice(0, 10)}…{status.mintGate.slice(-4)}{status.isMintGateFixed ? ' 🔒' : ''} ↗
+                {status.mintGate.slice(0, 10)}…{status.mintGate.slice(-4)}{status.isMintGateLocked ? ' 🔒' : ''} ↗
               </a>
             </>
           )}
@@ -188,7 +188,7 @@ export function StatusCard({ token, status, chain }: Props) {
                 rel="noopener noreferrer"
                 className="data-value link"
               >
-                {status.holdGate.slice(0, 10)}…{status.holdGate.slice(-4)}{status.isHoldGateFixed ? ' 🔒' : ''} ↗
+                {status.holdGate.slice(0, 10)}…{status.holdGate.slice(-4)}{status.isHoldGateLocked ? ' 🔒' : ''} ↗
               </a>
             </>
           )}

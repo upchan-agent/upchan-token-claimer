@@ -25,34 +25,10 @@ export const COMPOSITE_ABI = [
 // ─── Tokens ───
 export const TOKENS: TokenConfig[] = [
   {
-    id: 'test-mint-v2',
-    proxy: '0x6C526eE2741c7150912825D5611C343136BC137f',
+    id: 'test-mint-v3',
+    proxy: '0xB510Fdb260d12706a68C646dD309D0c6e0A41615',
     chainId: 4201,
     mintGate: '0x0000000000000000000000000000000000000000',
-  },
-  {
-    id: 'genesis-composite',
-    proxy: '0xE90f6dcda4876DF3b56f78dceE1906103dBB129E',
-    chainId: 4201,
-    mintGate: '0x06Acdd4F8e1aFD99059b0f66DD10A59F63F4400e',
-  },
-  {
-    id: 'genesis-old',
-    proxy: '0xf1d14e985cf4d7e95ba95e47b24dac47a811ceef',
-    chainId: 4201,
-    mintGate: '0x0000000000000000000000000000000000000000',
-  },
-  {
-    id: 'genesis-testnet',
-    proxy: '0xb1bD0a759AD9b47C1E9813B75877A503FcD95a3D',
-    chainId: 4201,
-    mintGate: '0x7592d3A04c9BfE0eDf05630ca183B22Bd1D2D811',
-  },
-  {
-    id: 'genesis-v2',
-    proxy: '0x46f2c84D266eF835EC63a753A3E22065C74202d1',
-    chainId: 4201,
-    mintGate: '0x58bEa6a7e23ec74d4a93415bf950D72001EF1fac',
   },
   {
     id: 'phlametoken',

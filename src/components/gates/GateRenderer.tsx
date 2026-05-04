@@ -99,6 +99,77 @@ async function fetchConditions(
       return parsed;
     }
 
+    // ─── RequirementsGate: parse individual conditions ───
+    if (type === 'requirements') {
+      const REQ_ABI = [
+        'function followTarget() view returns (address)',
+        'function minNativeBalance() view returns (uint256)',
+        'function minFollowers() view returns (uint256)',
+      ];
+      const rg = new ethers.Contract(gateAddress, REQ_ABI, p);
+      const [followAddr, minBal, minFol] = await Promise.all([
+        rg.followTarget().catch(() => ZERO_ADDR),
+        rg.minNativeBalance().catch(() => BigInt(0)),
+        rg.minFollowers().catch(() => BigInt(0)),
+      ]);
+
+      const parsed: Condition[] = [];
+
+      // Follow condition — check individually
+      if (followAddr !== ZERO_ADDR) {
+        const LSP26 = '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA';
+        let followOk = false;
+        try {
+          const lspIf = new ethers.Interface(['function isFollowing(address,address) view returns (bool)']);
+          const data = lspIf.encodeFunctionData('isFollowing', [checkUser, followAddr]);
+          const res = await p.call({ to: LSP26, data });
+          followOk = lspIf.decodeFunctionResult('isFollowing', res)[0];
+        } catch {}
+        parsed.push({
+          passed: followOk,
+          label: 'Must follow',
+          progress: followOk ? 'Following' : 'Not following',
+          gateType: 'follow',
+          target: (followAddr as string).toLowerCase(),
+        });
+      }
+
+      // Native balance — check individually
+      const minBalNum = minBal as bigint;
+      if (minBalNum > BigInt(0)) {
+        const balOk = (await p.getBalance(checkUser)) >= minBalNum;
+        parsed.push({
+          passed: balOk,
+          label: `Hold ${ethers.formatEther(minBalNum)} LYX`,
+          progress: balOk ? `${ethers.formatEther(minBalNum)} LYX` : `Need ${ethers.formatEther(minBalNum)} LYX`,
+          gateType: 'balance-native',
+          target: null,
+        });
+      }
+
+      // Followers — check individually
+      const minFolNum = minFol as bigint;
+      if (BigInt(minFolNum) > BigInt(0)) {
+        let folCount = BigInt(0);
+        try {
+          const lspIf = new ethers.Interface(['function totalFollowersOf(address) view returns (uint256)']);
+          const data = lspIf.encodeFunctionData('totalFollowersOf', [checkUser]);
+          const res = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
+          folCount = lspIf.decodeFunctionResult('totalFollowersOf', res)[0] as bigint;
+        } catch {}
+        const folOk = folCount >= BigInt(minFolNum);
+        parsed.push({
+          passed: folOk,
+          label: `${minFolNum}+ followers`,
+          progress: `${folCount}/${minFolNum}`,
+          gateType: 'followers',
+          target: null,
+        });
+      }
+
+      return parsed;
+    }
+
     // Single gate: return one condition
     const conditions: Condition[] = [{
       passed,

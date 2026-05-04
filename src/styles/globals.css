@@ -1044,3 +1044,142 @@ body {
 .anim-d2 { animation-delay: 0.2s; }
 .anim-d3 { animation-delay: 0.3s; }
 .anim-d4 { animation-delay: 0.4s; }
+.anim-d5 { animation-delay: 0.5s; }
+
+/* ─── Owner Panel ─── */
+
+.owner-section {
+  border-bottom: 1px solid var(--c-border);
+}
+
+.owner-section:last-child {
+  border-bottom: none;
+}
+
+.owner-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text);
+  text-align: left;
+  gap: 8px;
+}
+
+.owner-section-header:hover {
+  opacity: 0.8;
+}
+
+.owner-section-header--danger {
+  color: var(--c-error);
+}
+
+.owner-chevron {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--c-text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.owner-chevron--open {
+  transform: rotate(180deg);
+}
+
+.owner-section-body {
+  padding: 4px 0 12px;
+}
+
+/* Apple-style inputs */
+.owner-input {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: var(--c-text);
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.owner-input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 2px var(--c-accent-subtle);
+}
+
+.owner-input::placeholder {
+  color: var(--c-text-tertiary);
+}
+
+.owner-input select,
+.owner-input[type="number"],
+.owner-input[type="text"],
+input.owner-input {
+  font-size: 13px;
+}
+
+/* Apple-style select */
+select.owner-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+/* Owner panel data rows — use existing .data-row with increased gap */
+.owner-section-body .data-row {
+  gap: 8px;
+  min-height: 32px;
+}
+
+.owner-section-body .data-row .data-label {
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+/* Inline action row: input + button on same line, wraps on mobile */
+.owner-action-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.owner-action-row > * {
+  flex-shrink: 0;
+}
+
+.owner-action-row > .owner-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.owner-gate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* Token requirement rows */
+.owner-token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0 3px 8px;
+}
+
+.owner-token-row .data-value {
+  font-size: 12px;
+  font-family: monospace;
+}

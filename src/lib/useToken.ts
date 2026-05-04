@@ -16,12 +16,12 @@ export interface TokenStatus {
   isSoulbound: boolean;
   revokable: boolean;
   balanceCap: number;
-  isSupplyCapFixed: boolean;
+  isSupplyCapLocked: boolean;
   isFollowing: boolean;
   mintGate: `0x${string}`;
   holdGate: `0x${string}`;
-  isMintGateFixed: boolean;
-  isHoldGateFixed: boolean;
+  isMintGateLocked: boolean;
+  isHoldGateLocked: boolean;
   owner: `0x${string}`;
   canMint: boolean;
   isLoading: boolean;
@@ -39,11 +39,11 @@ interface ServerData {
   isSoulbound: boolean;
   revokable: boolean;
   balanceCap: number;
-  isSupplyCapFixed: boolean;
+  isSupplyCapLocked: boolean;
   mintGate: `0x${string}`;
   holdGate: `0x${string}`;
-  isMintGateFixed: boolean;
-  isHoldGateFixed: boolean;
+  isMintGateLocked: boolean;
+  isHoldGateLocked: boolean;
   owner: `0x${string}`;
 }
 
@@ -55,13 +55,13 @@ const TOKEN_ABI = [
   'function revokable() view returns (bool)',
   'function flexibleSupplyCap() view returns (uint256)',
   'function tokenBalanceCap() view returns (uint256)',
-  'function isSupplyCapFixed() view returns (bool)',
+  'function isSupplyCapLocked() view returns (bool)',
   'function mintGate() view returns (address)',
   'function owner() view returns (address)',
   'function balanceOf(address) view returns (uint256)',
   'function holdGate() view returns (address)',
-  'function isMintGateFixed() view returns (bool)',
-  'function isHoldGateFixed() view returns (bool)',
+  'function isMintGateLocked() view returns (bool)',
+  'function isHoldGateLocked() view returns (bool)',
 ];
 
 const DEFAULT_GATE = '0x0000000000000000000000000000000000000000' as const;
@@ -74,11 +74,11 @@ const SERVER_DEFAULTS: ServerData = {
   isSoulbound: true,
   revokable: false,
   balanceCap: 0,
-  isSupplyCapFixed: false,
+  isSupplyCapLocked: false,
   mintGate: DEFAULT_GATE,
   holdGate: DEFAULT_GATE,
-  isMintGateFixed: false,
-  isHoldGateFixed: false,
+  isMintGateLocked: false,
+  isHoldGateLocked: false,
   owner: DEFAULT_GATE,
 };
 
@@ -98,11 +98,11 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     c.revokable().catch(() => false),
     c.flexibleSupplyCap().catch(() => 0),
     c.tokenBalanceCap().catch(() => 0),
-    c.isSupplyCapFixed().catch(() => false),
+    c.isSupplyCapLocked().catch(() => false),
     c.mintGate().catch(() => DEFAULT_GATE),
     c.holdGate().catch(() => DEFAULT_GATE),
-    c.isMintGateFixed().catch(() => false),
-    c.isHoldGateFixed().catch(() => false),
+    c.isMintGateLocked().catch(() => false),
+    c.isHoldGateLocked().catch(() => false),
     c.owner().catch(() => DEFAULT_GATE),
   ]);
 
@@ -114,11 +114,11 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     isSoulbound: !!isb,
     revokable: !!rev,
     balanceCap: Number(tbc),
-    isSupplyCapFixed: !!iscf,
+    isSupplyCapLocked: !!iscf,
     mintGate: ethers.getAddress(mg) as `0x${string}`,
     holdGate: ethers.getAddress(hg) as `0x${string}`,
-    isMintGateFixed: !!mgf,
-    isHoldGateFixed: !!hgf,
+    isMintGateLocked: !!mgf,
+    isHoldGateLocked: !!hgf,
     owner: ethers.getAddress(own) as `0x${string}`,
   };
 }

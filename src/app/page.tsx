@@ -13,6 +13,7 @@ import { TokenCard } from '@/components/TokenCard';
 import { StatusCard } from '@/components/StatusCard';
 import { ActionCard } from '@/components/ActionCard';
 import { HoldersCard } from '@/components/HoldersCard';
+import { OwnerPanel } from '@/components/OwnerPanel';
 
 export default function HomePage() {
   const params = useSearchParams();
@@ -87,6 +88,14 @@ export default function HomePage() {
 
           {/* Holders */}
           <HoldersCard token={displayToken} />
+
+          {/* Owner Panel */}
+          <OwnerPanel
+            token={displayToken}
+            status={st}
+            chain={chain}
+            onDone={refresh}
+          />
         </div>
       </div>
 

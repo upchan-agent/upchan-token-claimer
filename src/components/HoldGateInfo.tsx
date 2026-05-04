@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { CHAINS, GATE_ABI } from '@/config/tokens';
+import { YesIcon, NoIcon, DashIcon } from './Icons';
 
 interface Props {
   gateAddress: `0x${string}`;
@@ -18,14 +19,26 @@ interface ConditionRow {
   progress: string;
 }
 
+type PropValue = 'yes' | 'no' | 'none';
+
+function StatusIcon({ value }: { value: PropValue }) {
+  const size = 12;
+  switch (value) {
+    case 'yes':
+      return <span style={{ color: 'var(--c-success)', display: 'flex' }}><YesIcon size={size} /></span>;
+    case 'no':
+      return <span style={{ color: 'var(--c-text-tertiary)', display: 'flex' }}><NoIcon size={size} /></span>;
+    case 'none':
+      return <span style={{ color: 'var(--c-text-tertiary)', display: 'flex' }}><DashIcon size={size} /></span>;
+  }
+}
+
 /**
- * Displays hold gate conditions as simple text rows.
- * Uses the gate's `check()` function and parses progress for individual items.
- * Does NOT render ProfileCard or follow buttons — those are for mint conditions only.
+ * Hold gate conditions displayed as data-rows (Properties format).
+ * Soulbound/Revokable attributes appended as additional data-rows.
  */
 export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, isRevokable }: Props) {
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
-  const [gateType, setGateType] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userAddress) return;
@@ -38,32 +51,26 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
         const p = new ethers.JsonRpcProvider(chain.rpc);
         const gate = new ethers.Contract(gateAddress, GATE_ABI, p);
 
-        // 1. Detect gate type
         const gt: string = await gate.gateType();
-        if (cancelled) return;
-        setGateType(gt);
 
-        // 2. RequirementsGate: parse individual conditions from getters
+        // RequirementsGate: parse individual conditions
         if (gt === 'requirements') {
           const REQ_ABI = [
             'function followTarget() view returns (address)',
             'function minNativeBalance() view returns (uint256)',
             'function minFollowers() view returns (uint256)',
             'function getTokenRequirements() view returns ((address token, uint256 minAmount)[])',
-            'function useOr() view returns (bool)',
           ];
           const rg = new ethers.Contract(gateAddress, REQ_ABI, p);
-          const [followTarget, minBal, minFol, tokenReqs, useOr] = await Promise.all([
+          const [followTarget, minBal, minFol, tokenReqs] = await Promise.all([
             rg.followTarget().catch(() => '0x0000000000000000000000000000000000000000'),
             rg.minNativeBalance().catch(() => BigInt(0)),
             rg.minFollowers().catch(() => BigInt(0)),
             rg.getTokenRequirements().catch(() => []),
-            rg.useOr().catch(() => false),
           ]);
 
           const rows: ConditionRow[] = [];
 
-          // Follow condition
           if (followTarget !== '0x0000000000000000000000000000000000000000') {
             let ok = false;
             try {
@@ -74,12 +81,11 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
             } catch {}
             rows.push({
               passed: ok,
-              label: 'Follow',
-              progress: ok ? 'Following ✓' : 'Not following',
+              label: 'Must follow',
+              progress: ok ? 'Following' : 'Not following',
             });
           }
 
-          // LYX balance
           const minBalNum = minBal as bigint;
           if (minBalNum > BigInt(0)) {
             const bal = await p.getBalance(userAddress);
@@ -87,11 +93,10 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
             rows.push({
               passed: ok,
               label: `≥ ${ethers.formatEther(minBalNum)} LYX`,
-              progress: ok ? `${ethers.formatEther(bal)} / ${ethers.formatEther(minBalNum)}` : `${ethers.formatEther(bal)} / ${ethers.formatEther(minBalNum)}`,
+              progress: ok ? `${ethers.formatEther(bal).slice(0, 6)} LYX` : `${ethers.formatEther(bal).slice(0, 6)} LYX`,
             });
           }
 
-          // Followers count
           const minFolNum = minFol as bigint;
           if (minFolNum > BigInt(0)) {
             let folCount = BigInt(0);
@@ -109,7 +114,6 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
             });
           }
 
-          // Token requirements
           const reqs = tokenReqs as { token: string; minAmount: bigint }[];
           for (const r of reqs) {
             let bal = BigInt(0);
@@ -123,7 +127,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
             rows.push({
               passed: ok,
               label: `Token ≥ ${r.minAmount}`,
-              progress: ok ? 'Held ✓' : `Need ${r.minAmount}`,
+              progress: ok ? 'Held' : `Need ${r.minAmount}`,
             });
           }
 
@@ -132,52 +136,49 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
           return;
         }
 
-        // 3. Single gates: use check()
-        if (gt !== 'requirements') {
-          const [, label, progress] = await gate.check(userAddress);
-          if (cancelled) return;
-          setConditions([{ passed: false, label: label || 'Unknown', progress }]);
-          return;
-        }
+        // Single gate: use check()
+        const [, label, progress] = await gate.check(userAddress);
+        if (cancelled) return;
+        setConditions([{ passed: false, label: label || gt, progress }]);
       } catch {
-        if (!cancelled) setConditions([{ passed: false, label: 'Could not load', progress: '' }]);
+        if (!cancelled) setConditions([]);
       }
     })();
 
     return () => { cancelled = true; };
   }, [gateAddress, chainId, userAddress]);
 
-  if (conditions.length === 0) {
-    return <p className="conditions-placeholder">Loading conditions...</p>;
-  }
-
   return (
-    <div className="conditions-area-compact">
-      {conditions.map((c, i) => (
-        <div key={i} className="condition-row">
-          <span className={`condition-dot condition-dot--${c.passed ? 'pass' : 'fail'}`} />
-          <span className={`condition-label condition-label--${c.passed ? 'pass' : 'fail'}`}>
-            {c.label}
-          </span>
-          {c.progress && (
-            <span className={`condition-progress condition-progress--${c.passed ? 'pass' : 'fail'}`}>
-              {c.progress}
-            </span>
-          )}
-        </div>
-      ))}
+    <div className="conditions-data-rows">
+      {conditions.length === 0 ? (
+        <p className="data-row conditions-placeholder" style={{ minHeight: '24px', border: 'none', margin: 0 }}>
+          Loading conditions...
+        </p>
+      ) : (
+        conditions.map((c, i) => {
+          const val: PropValue = c.passed ? 'yes' : 'no';
+          return (
+            <div key={i} className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
+              <span className="data-label">{c.label}</span>
+              <StatusIcon value={val} />
+              <span className="data-value" style={{ fontSize: 12 }}>{c.progress}</span>
+            </div>
+          );
+        })
+      )}
+      {/* Token attributes as data-rows */}
       {isSoulbound && (
-        <div className="condition-row">
-          <span className="condition-dot condition-dot--pass" />
-          <span className="condition-label condition-label--pass">Soulbound · Not transferable</span>
+        <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
+          <span className="data-label">Soulbound</span>
+          <StatusIcon value="yes" />
+          <span className="data-value" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>Not transferable</span>
         </div>
       )}
-      {isRevokable && conditions.length > 0 && (
-        <div className="condition-row">
-          <span className="condition-dot" style={{ background: 'var(--c-accent)' }} />
-          <span className="condition-label" style={{ color: 'var(--c-text-secondary)' }}>
-            Revokable · May lose tokens if conditions unmet
-          </span>
+      {isRevokable && (
+        <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
+          <span className="data-label">Revokable</span>
+          <span style={{ color: 'var(--c-accent)', display: 'flex' }}><YesIcon size={12} /></span>
+          <span className="data-value" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>May lose tokens</span>
         </div>
       )}
     </div>

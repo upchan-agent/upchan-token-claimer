@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import { ethers } from 'ethers';
 import { useUpProvider } from '@/lib/up-provider';
-import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
+import { useMint, useBurn, useFollow, TokenStatus } from '@/lib/useToken';
 import { TokenConfig } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
 import { GateRenderer } from './gates/GateRenderer';
@@ -23,6 +25,22 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
 
   const { mint, isPending: mintPending } = useMint(token, actionUser, onRefetch);
   const { burn, isPending: burnPending } = useBurn(token, actionUser, onRefetch);
+
+  // ─── Follow state (from GateRenderer callback) ───
+  const [followTarget, setFollowTarget] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const { follow, isPending: followPending } = useFollow(
+    actionUser, followTarget as `0x${string}`, token.chainId, onRefetch,
+  );
+
+  const handleFollowInfo = (target: string, following: boolean) => {
+    if (target === '0x0000000000000000000000000000000000000000') {
+      setFollowTarget(null);
+      return;
+    }
+    setFollowTarget(target);
+    setIsFollowing(following);
+  };
 
   // ─── Derived state ───
   const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
@@ -57,6 +75,16 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
         ? 'Burn'
         : 'Burn 1';
 
+  // ─── Follow button ───
+  const needsFollow = followTarget && connectedWallet && !isFollowing;
+  const followLabel = followTarget && connectedWallet
+    ? isFollowing
+      ? 'Following ✓'
+      : followPending
+        ? 'Following...'
+        : `Follow ${followTarget.slice(0, 6)}…${followTarget.slice(-4)}`
+    : 'Follow';
+
   // ─── Status line text (always present) ───
   const statusLine = !connectedWallet
     ? 'Connect wallet to interact'
@@ -75,9 +103,16 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           <div className="conditions-group">
             <span className="conditions-group-header">Mint</span>
             {hasMintGate ? (
-              <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} />
+              <GateRenderer
+                token={token} status={status} onRefetch={onRefetch}
+                userAddress={displayAddress} onFollowInfo={handleFollowInfo}
+              />
             ) : (
-              <p className="conditions-placeholder">No mint restrictions</p>
+              <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px', border: 'none' }}>
+                <span className="data-label" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
+                  No mint restrictions
+                </span>
+              </div>
             )}
           </div>
 
@@ -97,17 +132,31 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
               />
             ) : (
               <div>
-                <p className="conditions-placeholder">No holding restrictions</p>
+                <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px', border: 'none' }}>
+                  <span className="data-label" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
+                    No holding restrictions
+                  </span>
+                </div>
                 {status.isSoulbound && (
-                  <div className="condition-row">
-                    <span className="condition-dot condition-dot--pass" />
-                    <span className="condition-label condition-label--pass">Soulbound · Not transferable</span>
+                  <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px', border: 'none' }}>
+                    <span className="data-label">Soulbound</span>
+                    <span style={{ color: 'var(--c-success)', display: 'flex' }}>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                        <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+                      </svg>
+                    </span>
+                    <span className="data-value" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>Not transferable</span>
                   </div>
                 )}
                 {status.revokable && (
-                  <div className="condition-row">
-                    <span className="condition-dot" style={{ background: 'var(--c-accent)' }} />
-                    <span className="condition-label" style={{ color: 'var(--c-text-secondary)' }}>Revokable · May lose tokens</span>
+                  <div className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px', border: 'none' }}>
+                    <span className="data-label">Revokable</span>
+                    <span style={{ color: 'var(--c-accent)', display: 'flex' }}>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                        <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
+                      </svg>
+                    </span>
+                    <span className="data-value" style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>May lose tokens</span>
                   </div>
                 )}
               </div>
@@ -117,7 +166,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-           Actions — mint + burn buttons, fixed 80px
+           Actions — mint + burn + follow buttons, fixed 80px
            ═══════════════════════════════════════════════════════ */}
       <div className="card-section card-section--center card-block--action">
         <span className="section-label"><EmojiText>🐰 Actions 🐰</EmojiText></span>
@@ -138,6 +187,16 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           >
             {burnLabel}
           </button>
+
+          {needsFollow && (
+            <button
+              onClick={follow}
+              disabled={followPending}
+              className="btn btn-primary btn-sm"
+            >
+              {followLabel}
+            </button>
+          )}
         </div>
 
         <p className="action-status">{statusLine}</p>

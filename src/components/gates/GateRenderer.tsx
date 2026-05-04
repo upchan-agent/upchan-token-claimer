@@ -4,18 +4,38 @@ import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { TokenConfig, GATE_ABI, COMPOSITE_ABI, CHAINS } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
-import { NoGate } from './NoGate';
-import { UnknownGate, Condition } from './UnknownGate';
-import { ProfileCard } from './ProfileCard';
+import { YesIcon, NoIcon, DashIcon } from '../Icons';
 
 interface Props {
   token: TokenConfig;
   status: TokenStatus;
   onRefetch: () => void;
   userAddress?: `0x${string}` | null;
+  /** Fired when a follow condition is detected */
+  onFollowInfo?: (target: string, isFollowing: boolean) => void;
 }
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
+
+export interface ConditionRow {
+  passed: boolean;
+  label: string;
+  progress: string;
+}
+
+type PropValue = 'yes' | 'no' | 'none';
+
+function StatusIcon({ value }: { value: PropValue }) {
+  const size = 12;
+  switch (value) {
+    case 'yes':
+      return <span style={{ color: 'var(--c-success)', display: 'flex' }}><YesIcon size={size} /></span>;
+    case 'no':
+      return <span style={{ color: 'var(--c-text-tertiary)', display: 'flex' }}><NoIcon size={size} /></span>;
+    case 'none':
+      return <span style={{ color: 'var(--c-text-tertiary)', display: 'flex' }}><DashIcon size={size} /></span>;
+  }
+}
 
 // ─── On-chain helpers ────────────────────────────────────
 
@@ -42,7 +62,7 @@ async function fetchConditions(
   gateAddress: string,
   chainId: number,
   user: string | null
-): Promise<Condition[]> {
+): Promise<ConditionRow[]> {
   if (gateAddress === ZERO_ADDR) return [];
 
   const chain = CHAINS[chainId];
@@ -56,32 +76,22 @@ async function fetchConditions(
     const type = gtype.toLowerCase();
 
     const checkUser = user || '0x0000000000000000000000000000000000000001';
-    let passed = false;
-    let label = '';
-    let progress = '';
-    try {
-      const [p2, l, pr] = await gate.check(checkUser);
-      passed = p2;
-      label = l;
-      progress = pr;
-    } catch { /* check may fail */ }
 
     if (type === 'composite') {
       let children: string[] = [];
       try {
         const cg = new ethers.Contract(gateAddress, GATE_ABI.concat(COMPOSITE_ABI), p);
         children = await cg.getChildren();
-      } catch {
-        return [];
-      }
+      } catch { return []; }
 
-      const parsed: Condition[] = [];
+      const [, , progress] = await gate.check(checkUser);
+      const parsed: ConditionRow[] = [];
       if (progress) {
         const parts = progress.split(' | ');
         for (let i = 0; i < parts.length; i++) {
           const condPassed = parts[i].startsWith('\u2713 ');
           const condLabel = parts[i].slice(2);
-          parsed.push({ passed: condPassed, label: condLabel });
+          parsed.push({ passed: condPassed, label: condLabel, progress: '' });
         }
       }
 
@@ -89,9 +99,8 @@ async function fetchConditions(
         try {
           const childGate = new ethers.Contract(children[i], GATE_ABI, p);
           const ct: string = await childGate.gateType();
-          parsed[i].gateType = ct.toLowerCase();
-          if (parsed[i].gateType === 'follow') {
-            parsed[i].target = await fetchTarget(children[i], chainId);
+          if (ct === 'follow') {
+            parsed[i].progress = 'Must follow target';
           }
         } catch { /* skip */ }
       }
@@ -99,7 +108,7 @@ async function fetchConditions(
       return parsed;
     }
 
-    // ─── RequirementsGate: parse individual conditions ───
+    // ─── RequirementsGate ───
     if (type === 'requirements') {
       const REQ_ABI = [
         'function followTarget() view returns (address)',
@@ -113,128 +122,128 @@ async function fetchConditions(
         rg.minFollowers().catch(() => BigInt(0)),
       ]);
 
-      const parsed: Condition[] = [];
+      const parsed: ConditionRow[] = [];
 
-      // Follow condition — check individually
       if (followAddr !== ZERO_ADDR) {
-        const LSP26 = '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA';
         let followOk = false;
         try {
           const lspIf = new ethers.Interface(['function isFollowing(address,address) view returns (bool)']);
           const data = lspIf.encodeFunctionData('isFollowing', [checkUser, followAddr]);
-          const res = await p.call({ to: LSP26, data });
+          const res = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
           followOk = lspIf.decodeFunctionResult('isFollowing', res)[0];
         } catch {}
         parsed.push({
           passed: followOk,
           label: 'Must follow',
           progress: followOk ? 'Following' : 'Not following',
-          gateType: 'follow',
-          target: (followAddr as string).toLowerCase(),
         });
       }
 
-      // Native balance — check individually
       const minBalNum = minBal as bigint;
       if (minBalNum > BigInt(0)) {
         const balOk = (await p.getBalance(checkUser)) >= minBalNum;
         parsed.push({
           passed: balOk,
           label: `≥ ${ethers.formatEther(minBalNum)} LYX`,
-          progress: balOk ? 'OK' : `Need ${ethers.formatEther(minBalNum)} LYX`,
-          gateType: 'balance-native',
-          target: null,
+          progress: balOk ? `${ethers.formatEther(minBalNum)} LYX` : `Need ${ethers.formatEther(minBalNum)} LYX`,
         });
       }
 
-      // Followers — check individually
       const minFolNum = minFol as bigint;
       if (BigInt(minFolNum) > BigInt(0)) {
         let folCount = BigInt(0);
         try {
-          const lspIf = new ethers.Interface(['function totalFollowersOf(address) view returns (uint256)']);
-          const data = lspIf.encodeFunctionData('totalFollowersOf', [checkUser]);
+          const iface = new ethers.Interface(['function totalFollowersOf(address) view returns (uint256)']);
+          const data = iface.encodeFunctionData('totalFollowersOf', [checkUser]);
           const res = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
-          folCount = lspIf.decodeFunctionResult('totalFollowersOf', res)[0] as bigint;
+          folCount = iface.decodeFunctionResult('totalFollowersOf', res)[0] as bigint;
         } catch {}
-        const folOk = folCount >= BigInt(minFolNum);
+        const ok = folCount >= BigInt(minFolNum);
         parsed.push({
-          passed: folOk,
+          passed: ok,
           label: `≥ ${minFolNum} followers`,
-          progress: `${folCount}/${minFolNum}`,
-          gateType: 'followers',
-          target: null,
+          progress: `${folCount} / ${minFolNum}`,
         });
       }
 
       return parsed;
     }
 
-    // Single gate: return one condition
-    const conditions: Condition[] = [{
-      passed,
-      label: label || (type === 'follow' ? 'Must follow' : 'Unknown condition'),
-      progress,
-      gateType: type,
-      target: type === 'follow' ? await fetchTarget(gateAddress, chainId) : null,
-    }];
-    return conditions;
+    // Single gate
+    const [, label, progress] = await gate.check(checkUser);
+    return [{ passed: false, label: label || type, progress }];
 
   } catch {
-    return [{ passed: false, label: 'Unknown condition', gateType: 'unknown' }];
+    return [{ passed: false, label: 'Unknown condition', progress: '' }];
   }
 }
 
 // ─── Component ───────────────────────────────────────────
 
-export function GateRenderer({ token, status, onRefetch, userAddress }: Props) {
+export function GateRenderer({ token, status, onRefetch, userAddress, onFollowInfo }: Props) {
   const hasGate = status.mintGate !== ZERO_ADDR;
-  const [conditions, setConditions] = useState<Condition[]>([]);
+  const [conditions, setConditions] = useState<ConditionRow[]>([]);
 
   useEffect(() => {
     if (!hasGate) {
       setConditions([]);
+      onFollowInfo?.(ZERO_ADDR, false);
       return;
     }
     let cancelled = false;
     fetchConditions(status.mintGate, token.chainId, userAddress ?? null).then((result) => {
       if (cancelled) return;
       setConditions(result);
+      // Extract follow info for action bar
+      if (onFollowInfo && token && status.mintGate) {
+        detectFollowTarget(status.mintGate, token.chainId, result, onFollowInfo);
+      }
     });
     return () => { cancelled = true; };
-  }, [status.mintGate, token.chainId, userAddress, hasGate]);
+  }, [status.mintGate, token.chainId, userAddress, hasGate, onFollowInfo, token]);
 
-  if (!hasGate) return <NoGate />;
-
-  // Separate follow condition from others — follow gets its own profile card
-  const followCond = conditions.find(c => c.gateType === 'follow');
-  const otherConds = conditions.filter(c => c.gateType !== 'follow');
+  if (!hasGate) return null;
+  if (conditions.length === 0) return null;
 
   return (
-    <div className="eligibility-grid">
-      <div className="eligibility-conditions">
-        <UnknownGate conditions={otherConds} />
-        {/* Follow condition label on the left (profile card on the right) */}
-        {followCond && (
-          <div className="condition-list">
-            <div className="condition-row">
-              <span className={`condition-dot condition-dot--${followCond.passed ? 'pass' : 'fail'}`} />
-              <span className={`condition-label condition-label--${followCond.passed ? 'pass' : 'fail'}`}>
-                Must follow
-              </span>
-            </div>
+    <div className="conditions-data-rows">
+      {conditions.map((c, i) => {
+        const val: PropValue = c.passed ? 'yes' : 'no';
+        return (
+          <div key={i} className="data-row" style={{ padding: 'var(--space-2xs) 0', minHeight: '24px' }}>
+            <span className="data-label">{c.label}</span>
+            <StatusIcon value={val} />
+            <span className="data-value" style={{ fontSize: 12 }}>{c.progress}</span>
           </div>
-        )}
-      </div>
-
-      {/* Right column: profile card */}
-      {followCond && (
-        <ProfileCard
-          target={followCond.target}
-          chainId={token.chainId}
-          onFollowDone={onRefetch}
-        />
-      )}
+        );
+      })}
     </div>
   );
+}
+
+// ─── Follow target detection for action bar ──────────────
+
+async function detectFollowTarget(
+  gateAddress: string,
+  chainId: number,
+  conditions: ConditionRow[],
+  onFollowInfo: (target: string, isFollowing: boolean) => void,
+) {
+  // Check if any condition involves following
+  if (!conditions.some(c => c.label === 'Must follow')) return;
+
+  try {
+    const chain = CHAINS[chainId];
+    if (!chain) return;
+    const p = new ethers.JsonRpcProvider(chain.rpc);
+    const REQ_ABI = ['function followTarget() view returns (address)'];
+    const rg = new ethers.Contract(gateAddress, REQ_ABI, p);
+    const target = await rg.followTarget();
+    if (target === ZERO_ADDR) return;
+
+    const followCond = conditions.find(c => c.label === 'Must follow');
+    onFollowInfo((target as string).toLowerCase(), followCond?.passed ?? false);
+  } catch {
+    // can't detect
+  }
 }

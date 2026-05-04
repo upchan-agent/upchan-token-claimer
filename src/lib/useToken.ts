@@ -262,6 +262,38 @@ export function useMint(
   return { mint, isPending };
 }
 
+// ─── Burn ────────────────────────────────────────────────
+
+export function useBurn(
+  token: TokenConfig | null,
+  userAddress: `0x${string}` | null,
+  onDone?: () => void
+) {
+  const { sendTx } = useTxContext();
+  const [isPending, setIsPending] = useState(false);
+
+  const burn = useCallback(async (amount: number = 1) => {
+    if (!token || !userAddress || amount <= 0) return;
+    setIsPending(true);
+    try {
+      const burnIface = new ethers.Interface([
+        'function burn(address,uint256,bytes)',
+      ]);
+      const innerData = burnIface.encodeFunctionData('burn', [
+        userAddress, BigInt(amount), '0x',
+      ]);
+      await sendTx(`Burning ${amount} Token${amount > 1 ? 's' : ''}`, token.proxy, innerData, token.chainId);
+      onDone?.();
+    } catch {
+      // sendTx writes failure to global TxContext
+    } finally {
+      setIsPending(false);
+    }
+  }, [token, userAddress, sendTx, onDone]);
+
+  return { burn, isPending };
+}
+
 // ─── Follow ──────────────────────────────────────────────
 
 export function useFollow(

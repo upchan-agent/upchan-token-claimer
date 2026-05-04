@@ -303,30 +303,32 @@ body {
 }
 
 /* ─── Card section content containers ───
-     card-block--md:  Mint/claim area — button centered
-     card-block--lg:  Status/eligibility area — text centered
-     Both guarantee the label stays at the top-left.        */
+     card-block--xl:  Eligibility — mint + hold conditions
+     card-block--action:  Buttons + status line
+     Both guarantee the label stays at the top-left.
+     Both use fixed min-height so card size never changes.
+  */
 
-.card-section--center.card-block--lg {
+.card-section--center.card-block--xl {
   display: flex;
   flex-direction: column;
-  min-height: 130px;
+  min-height: 200px;
 }
 
-.card-section--center.card-block--lg > :last-child {
+.card-section--center.card-block--xl > :last-child {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  min-height: 0;
 }
 
-.card-section--center.card-block--md {
+.card-section--center.card-block--action {
   display: flex;
   flex-direction: column;
-  min-height: 100px;
+  min-height: 80px;
 }
 
-.card-section--center.card-block--md > :last-child {
+.card-section--center.card-block--action > :last-child {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -334,10 +336,76 @@ body {
   justify-content: center;
 }
 
-/* Btn inside card-block--md: content-sized (Apple standard) */
-
-/* Card block: fixed min-height for stable layout (standalone, non-flex) */
+/* Small card block: standalone use */
 .card-block--sm { min-height: 40px; }
+
+/* ─── Conditions area (inside card-block--xl) ─── */
+
+.conditions-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.conditions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.conditions-group-header {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-secondary);
+  margin-bottom: var(--space-2xs);
+}
+
+.conditions-divider {
+  height: 1px;
+  background: var(--c-border);
+  margin: var(--space-2xs) 0;
+}
+
+.conditions-placeholder {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+  color: var(--c-text-secondary);
+  margin: 0;
+}
+
+/* ─── Hold gate conditions (inside HoldGateInfo) ─── */
+.conditions-area-compact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+/* ─── Action bar (inside card-block--action) ─── */
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.action-status {
+  margin: var(--space-xs) 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+  color: var(--c-text-secondary);
+  text-align: center;
+}
 
 /* ─── Card Media (replaces .token-img-*) ─── */
 

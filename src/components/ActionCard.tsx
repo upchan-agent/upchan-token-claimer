@@ -1,11 +1,11 @@
 'use client';
 
 import { useUpProvider } from '@/lib/up-provider';
-import { useMint, TokenStatus } from '@/lib/useToken';
+import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
 import { TokenConfig } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
-import { StatusMessage } from './StatusMessage';
 import { GateRenderer } from './gates/GateRenderer';
+import { HoldGateInfo } from './HoldGateInfo';
 
 interface Props {
   token: TokenConfig;
@@ -19,158 +19,129 @@ interface Props {
 export function ActionCard({ token, status, chain, onRefetch, displayAddress, walletAddress }: Props) {
   const { accounts, isConnected } = useUpProvider();
   const connectedWallet = accounts[0] || null;
-
-  // Actions always use the connected wallet
   const actionUser = connectedWallet;
-  const { mint, isPending } = useMint(token, actionUser, onRefetch);
 
-  // ─── Display context ───
-  const isViewingOther = !!displayAddress && !!connectedWallet && displayAddress !== connectedWallet;
+  const { mint, isPending: mintPending } = useMint(token, actionUser, onRefetch);
+  const { burn, isPending: burnPending } = useBurn(token, actionUser, onRefetch);
+
+  // ─── Derived state ───
+  const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
+  const hasHoldGate = status.holdGate !== '0x0000000000000000000000000000000000000000';
   const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
+  const hasTokens = status.userBalance > 0;
+  const isSoldOut = status.supplyCap > 0 && status.totalSupply >= status.supplyCap;
 
-  const renderMintState = () => {
-    // Wallet connected but user data (balance, gate) still loading
-    if (connectedWallet && !status.isUserDataReady && !status.error) {
-      return (
-        <p className="text-caption empty-state">
-          Checking account...
-        </p>
-      );
-    }
+  // ─── Mint button (always in DOM, disabled states controlled) ───
+  const mintDisabled = !connectedWallet || isAtMaxBalance || status.mintingDisabled || isSoldOut || !status.isMintable || mintPending;
+  const mintLabel = !connectedWallet
+    ? 'Mint NFT'
+    : mintPending
+      ? 'Minting...'
+      : isAtMaxBalance
+        ? 'Max Reached'
+        : status.mintingDisabled
+          ? 'Minting Closed'
+          : isSoldOut
+            ? 'Sold Out'
+            : !status.isMintable
+              ? 'Not Available'
+              : 'Mint NFT';
 
-    // Not connected — show connect prompt
-    if (!connectedWallet) {
-      if (displayAddress) {
-        // Searching without wallet: show claimed status + connect prompt
-        if (status.userBalance > 0) {
-          return (
-            <StatusMessage
-              variant="claimed"
-              title="Claimed ✓"
-              caption={`${displayAddress.slice(0, 6)}…${displayAddress.slice(-4)} owns ${status.userBalance}`}
-            />
-          );
-        }
-      }
-      return (
-        <p className="text-caption empty-state">
-          <EmojiText>Connect 🆙</EmojiText>
-        </p>
-      );
-    }
+  // ─── Burn button ───
+  const burnDisabled = !connectedWallet || !hasTokens || burnPending;
+  const burnLabel = !connectedWallet
+    ? 'Burn'
+    : burnPending
+      ? 'Burning...'
+      : !hasTokens
+        ? 'Burn'
+        : 'Burn 1';
 
-    // Connected but viewing someone else's profile
-    if (isViewingOther) {
-      // Show their claim status
-      const otherContent = status.userBalance > 0
-        ? (
-          <StatusMessage
-            variant="claimed"
-            title="Claimed ✓"
-            caption={`${displayAddress!.slice(0, 6)}…${displayAddress!.slice(-4)} owns ${status.userBalance}`}
-          />
-        )
-        : (
-          <StatusMessage
-            variant="unavailable"
-            title="Not Claimed"
-            caption={`${displayAddress!.slice(0, 6)}…${displayAddress!.slice(-4)} hasn't claimed`}
-          />
-        );
-
-      // If the connected wallet can also mint, show a mini action
-      if (status.canMint && !isAtMaxBalance) {
-        return (
-          <>
-            {otherContent}
-            <div style={{ marginTop: 8 }}>
-              <button
-                onClick={mint}
-                disabled={isPending}
-                className="btn btn-primary btn-sm"
-              >
-                {isPending ? 'Claiming...' : 'Mint for Yourself'}
-              </button>
-            </div>
-          </>
-        );
-      }
-
-      return otherContent;
-    }
-
-    // Connected, viewing connected wallet — full mint UI
-    if (isAtMaxBalance) {
-      return (
-        <StatusMessage
-          variant="claimed"
-          title="Claimed ✓"
-          caption={`You own ${status.userBalance} token${status.userBalance > 1 ? 's' : ''}`}
-        />
-      );
-    }
-
-    if (status.mintingDisabled) {
-      return (
-        <StatusMessage
-          variant="closed"
-          title="Minting Closed"
-          caption="Permanently disabled"
-        />
-      );
-    }
-
-    if (!status.isMintable) {
-      return (
-        <StatusMessage
-          variant="unavailable"
-          title="Not Available"
-          caption="Minting is not open yet"
-        />
-      );
-    }
-
-    if (status.totalSupply >= status.supplyCap) {
-      return (
-        <StatusMessage
-          variant="soldout"
-          title="Sold Out"
-          caption="All tokens claimed"
-        />
-      );
-    }
-
-    return (
-      <button
-        onClick={mint}
-        disabled={isPending}
-        className="btn btn-primary btn-sm"
-      >
-        {isPending ? 'Claiming...' : 'Mint NFT'}
-      </button>
-    );
-  };
+  // ─── Status line text (always present) ───
+  const statusLine = !connectedWallet
+    ? 'Connect wallet to interact'
+    : `Connected · You hold ${status.userBalance}${status.balanceCap > 0 ? ` / ${status.balanceCap}` : ''}`;
 
   return (
     <div className="card anim anim-d3">
-      {/* Eligibility — always visible */}
-      <div className="card-section card-section--center card-block--lg">
+      {/* ═══════════════════════════════════════════════════════
+           Eligibility — mint + hold conditions, fixed 200px
+           ═══════════════════════════════════════════════════════ */}
+      <div className="card-section card-section--center card-block--xl">
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
-        {/* Wrapper div guarantees a stable 2nd child for :last-child CSS */}
-        <div>
-          <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} />
+
+        <div className="conditions-area">
+          {/* ─── Mint conditions ─── */}
+          <div className="conditions-group">
+            <span className="conditions-group-header">Mint</span>
+            {hasMintGate ? (
+              <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} />
+            ) : (
+              <p className="conditions-placeholder">No mint restrictions</p>
+            )}
+          </div>
+
+          {/* ─── Divider ─── */}
+          <div className="conditions-divider" />
+
+          {/* ─── Hold conditions ─── */}
+          <div className="conditions-group">
+            <span className="conditions-group-header">Hold</span>
+            {hasHoldGate ? (
+              <HoldGateInfo
+                gateAddress={status.holdGate}
+                chainId={token.chainId}
+                userAddress={displayAddress || actionUser}
+                isSoulbound={status.isSoulbound}
+                isRevokable={status.revokable}
+              />
+            ) : (
+              <div>
+                <p className="conditions-placeholder">No holding restrictions</p>
+                {status.isSoulbound && (
+                  <div className="condition-row">
+                    <span className="condition-dot condition-dot--pass" />
+                    <span className="condition-label condition-label--pass">Soulbound · Not transferable</span>
+                  </div>
+                )}
+                {status.revokable && (
+                  <div className="condition-row">
+                    <span className="condition-dot" style={{ background: 'var(--c-accent)' }} />
+                    <span className="condition-label" style={{ color: 'var(--c-text-secondary)' }}>Revokable · May lose tokens</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Claim — shows loading state while user data is being fetched */}
-      <div className="card-section card-section--center card-block--md">
-        <span className="section-label"><EmojiText>🐰 Claim 🐰</EmojiText></span>
-        {/* Wrapper div: keeps :last-child from stretching the button itself */}
-        <div>
-          {renderMintState()}
-        </div>
-      </div>
+      {/* ═══════════════════════════════════════════════════════
+           Actions — mint + burn buttons, fixed 80px
+           ═══════════════════════════════════════════════════════ */}
+      <div className="card-section card-section--center card-block--action">
+        <span className="section-label"><EmojiText>🐰 Actions 🐰</EmojiText></span>
 
+        <div className="action-bar">
+          <button
+            onClick={mint}
+            disabled={mintDisabled}
+            className="btn btn-primary btn-sm"
+          >
+            {mintLabel}
+          </button>
+
+          <button
+            onClick={() => burn(1)}
+            disabled={burnDisabled}
+            className="btn btn-secondary btn-sm"
+          >
+            {burnLabel}
+          </button>
+        </div>
+
+        <p className="action-status">{statusLine}</p>
+      </div>
     </div>
   );
 }

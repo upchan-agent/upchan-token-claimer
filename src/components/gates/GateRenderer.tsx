@@ -140,8 +140,8 @@ async function fetchConditions(
         const balOk = (await p.getBalance(checkUser)) >= minBalNum;
         parsed.push({
           passed: balOk,
-          label: `Hold ${ethers.formatEther(minBalNum)} LYX`,
-          progress: balOk ? `${ethers.formatEther(minBalNum)} LYX` : `Need ${ethers.formatEther(minBalNum)} LYX`,
+          label: `≥ ${ethers.formatEther(minBalNum)} LYX`,
+          progress: balOk ? 'OK' : `Need ${ethers.formatEther(minBalNum)} LYX`,
           gateType: 'balance-native',
           target: null,
         });
@@ -160,7 +160,7 @@ async function fetchConditions(
         const folOk = folCount >= BigInt(minFolNum);
         parsed.push({
           passed: folOk,
-          label: `${minFolNum}+ followers`,
+          label: `≥ ${minFolNum} followers`,
           progress: `${folCount}/${minFolNum}`,
           gateType: 'followers',
           target: null,

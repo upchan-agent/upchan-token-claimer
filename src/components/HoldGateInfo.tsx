@@ -10,7 +10,6 @@ interface Props {
   gateAddress: `0x${string}`;
   chainId: number;
   userAddress: string | null;
-  isSoulbound: boolean;
   isRevokable: boolean;
   onFollow?: (target: `0x${string}`) => Promise<void>;
 }
@@ -35,7 +34,7 @@ function ConditionIcon({ passed }: { passed: boolean }) {
  * Only shown when a hold gate is configured (ActionCard verifies hasHoldGate).
  * Revokable is also shown only when holdGate is set (revokeByGate requires it).
  */
-export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, isRevokable, onFollow }: Props) {
+export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, onFollow }: Props) {
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [followTarget, setFollowTarget] = useState<{ addr: `0x${string}`; name: string } | null>(null);
   const [isFollowPending, setIsFollowPending] = useState(false);
@@ -156,23 +155,17 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
     }
   };
 
+  if (conditions.length === 0) return null;
+
   return (
     <div>
-      {conditions.length === 0 ? (
-        <div className="data-row" style={{ border: 'none' }}>
-          <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
-            Loading conditions...
-          </span>
+      {conditions.map((c, i) => (
+        <div key={i} className="data-row" style={{ border: 'none' }}>
+          <span className="data-label">{c.label}</span>
+          <ConditionIcon passed={c.passed} />
+          <span className="data-value">{c.progress}</span>
         </div>
-      ) : (
-        conditions.map((c, i) => (
-          <div key={i} className="data-row" style={{ border: 'none' }}>
-            <span className="data-label">{c.label}</span>
-            <ConditionIcon passed={c.passed} />
-            <span className="data-value">{c.progress}</span>
-          </div>
-        ))
-      )}
+      ))}
       {followTarget && onFollow && conditions.find(c => c.label === `Follow ${followTarget.name}`)?.passed === false && (
         <div className="data-row" style={{ border: 'none' }}>
           <span />
@@ -188,18 +181,11 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isSoulbound, i
           </span>
         </div>
       )}
-      {isSoulbound && (
-        <div className="data-row" style={{ border: 'none' }}>
-          <span className="data-label">Soulbound</span>
-          <span className="status-icon--yes"><YesIcon size={14} /></span>
-          <span className="data-value">Not transferable</span>
-        </div>
-      )}
       {isRevokable && (
         <div className="data-row" style={{ border: 'none' }}>
           <span className="data-label">Revokable</span>
           <span className="status-icon--yes"><YesIcon size={14} /></span>
-          <span className="data-value">Revocable if conditions unmet</span>
+          <span className="data-value">Owner may revoke if hold conditions unmet</span>
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ import { useUpProvider } from '@/lib/up-provider';
 import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
 import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
-import { YesIcon } from './Icons';
+import { DashIcon } from './Icons';
 import { GateRenderer } from './gates/GateRenderer';
 import { HoldGateInfo } from './HoldGateInfo';
 import { useTxContext } from '@/lib/tx-context';
@@ -97,7 +97,6 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
                 gateAddress={status.holdGate}
                 chainId={token.chainId}
                 userAddress={displayAddress || actionUser}
-                isSoulbound={status.isSoulbound}
                 isRevokable={status.revokable}
                 onFollow={async (target: `0x${string}`) => {
                   const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
@@ -109,17 +108,10 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
             ) : (
               <>
                 <div className="data-row" style={{ border: 'none' }}>
-                  <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
-                    No holding restrictions
-                  </span>
+                  <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>No holding restrictions</span>
+                  <span className="status-icon--none"><DashIcon size={14} /></span>
+                  <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
                 </div>
-                {status.isSoulbound && (
-                  <div className="data-row" style={{ border: 'none' }}>
-                    <span className="data-label">Soulbound</span>
-                    <span className="status-icon--yes"><YesIcon size={14} /></span>
-                    <span className="data-value">Not transferable</span>
-                  </div>
-                )}
               </>
             )}
           </div>

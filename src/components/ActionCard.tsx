@@ -1,11 +1,14 @@
 'use client';
 
+import { ethers } from 'ethers';
 import { useUpProvider } from '@/lib/up-provider';
 import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
-import { TokenConfig } from '@/config/tokens';
+import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
+import { YesIcon } from './Icons';
 import { GateRenderer } from './gates/GateRenderer';
 import { HoldGateInfo } from './HoldGateInfo';
+import { useTxContext } from '@/lib/tx-context';
 
 interface Props {
   token: TokenConfig;
@@ -20,6 +23,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
   const { accounts, isConnected } = useUpProvider();
   const connectedWallet = accounts[0] || null;
   const actionUser = connectedWallet;
+  const { sendTx } = useTxContext();
 
   const { mint, isPending: mintPending } = useMint(token, actionUser, onRefetch);
   const { burn, isPending: burnPending } = useBurn(token, actionUser, onRefetch);
@@ -71,7 +75,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
 
         <div className="conditions-area">
-          {/* ─── Mint conditions ─── */}
+          <div className="conditions-block">
           <span className="conditions-group-header">Mint</span>
           <div className="conditions-group">
             {hasMintGate ? (
@@ -84,11 +88,8 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
               </div>
             )}
           </div>
-
-          {/* ─── Divider ─── */}
-          <div className="conditions-divider" />
-
-          {/* ─── Hold conditions ─── */}
+          </div>
+          <div className="conditions-block">
           <span className="conditions-group-header">Hold</span>
           <div className="conditions-group">
             {hasHoldGate ? (
@@ -98,9 +99,15 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
                 userAddress={displayAddress || actionUser}
                 isSoulbound={status.isSoulbound}
                 isRevokable={status.revokable}
+                onFollow={async (target: `0x${string}`) => {
+                  const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
+                  const data = lsp26Iface.encodeFunctionData('follow', [target]);
+                  await sendTx('Follow Profile', LSP26_ADDRESS, data, token.chainId);
+                  onRefetch();
+                }}
               />
             ) : (
-              <div>
+              <>
                 <div className="data-row" style={{ border: 'none' }}>
                   <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
                     No holding restrictions
@@ -109,16 +116,13 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
                 {status.isSoulbound && (
                   <div className="data-row" style={{ border: 'none' }}>
                     <span className="data-label">Soulbound</span>
-                    <span className="status-icon--yes">
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-                        <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
-                      </svg>
-                    </span>
+                    <span className="status-icon--yes"><YesIcon size={14} /></span>
                     <span className="data-value">Not transferable</span>
                   </div>
                 )}
-              </div>
+              </>
             )}
+          </div>
           </div>
         </div>
       </div>

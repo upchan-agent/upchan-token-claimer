@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { TokenConfig, GATE_ABI, COMPOSITE_ABI, CHAINS } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
+import { fetchProfileMeta } from '@/lib/useProfileMetadata';
+import { YesIcon, NoIcon } from '@/components/Icons';
 
 interface Props {
   token: TokenConfig;
   status: TokenStatus;
   onRefetch: () => void;
   userAddress?: `0x${string}` | null;
+  onFollow?: (target: `0x${string}`) => Promise<void>;
 }
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
@@ -28,15 +31,7 @@ function ConditionIcon({ passed }: { passed: boolean }) {
   const cls = passed ? 'status-icon--yes' : 'status-icon--no';
   return (
     <span className={cls}>
-      {passed ? (
-        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-          <circle cx="12" cy="12" r="10" /><path d="M8 12l3 3 5-5" />
-        </svg>
-      ) : (
-        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-          <circle cx="12" cy="12" r="10" /><path d="M9 9l6 6M15 9l-6 6" />
-        </svg>
-      )}
+      {passed ? <YesIcon size={14} /> : <NoIcon size={14} />}
     </span>
   );
 }
@@ -94,7 +89,18 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
         try {
           const childGate = new ethers.Contract(children[i], GATE_ABI, p);
           const ct: string = await childGate.gateType();
-          if (ct === 'follow') parsed[i].progress = 'Must follow target';
+          if (ct === 'follow') {
+            try {
+              const targetAbi = new ethers.Interface(['function target() view returns (address)']);
+              const tData = targetAbi.encodeFunctionData('target', []);
+              const tRes = await p.call({ to: children[i], data: tData });
+              const tAddr: string = targetAbi.decodeFunctionResult('target', tRes)[0];
+              const profile = await fetchProfileMeta(tAddr, chainId);
+              parsed[i].progress = profile?.name || tAddr.slice(0, 6) + '…' + tAddr.slice(-4);
+            } catch {
+              parsed[i].progress = '-';
+            }
+          }
         } catch { /* skip */ }
       }
       return parsed;
@@ -124,9 +130,17 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
           const res = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
           followOk = lspIf.decodeFunctionResult('isFollowing', res)[0];
         } catch {}
+
+        // Resolve profile name via Envio
+        let displayName = followAddr.slice(0, 6) + '…' + followAddr.slice(-4);
+        try {
+          const profile = await fetchProfileMeta(followAddr, chainId);
+          if (profile?.name) displayName = profile.name;
+        } catch {}
+
         parsed.push({
           passed: followOk,
-          label: 'Must follow',
+          label: `Follow ${displayName}`,
           progress: followOk ? 'Following' : 'Not following',
         });
       }
@@ -172,19 +186,56 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
 
 // ─── Component ───────────────────────────────────────────
 
-export function GateRenderer({ token, status }: Props) {
+export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }: Props) {
   const hasGate = status.mintGate !== ZERO_ADDR;
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
+  const [followTarget, setFollowTarget] = useState<{ addr: `0x${string}`; name: string } | null>(null);
+  const [isFollowPending, setIsFollowPending] = useState(false);
 
   useEffect(() => {
     if (!hasGate) { setConditions([]); return; }
     let cancelled = false;
-    fetchConditions(status.mintGate, token.chainId, null).then((result) => {
+    setFollowTarget(null);
+
+    (async () => {
+      const result = await fetchConditions(status.mintGate, token.chainId, userAddress || null);
       if (cancelled) return;
       setConditions(result);
-    });
+
+      // Also resolve follow target info for the follow button
+      try {
+        const p = new ethers.JsonRpcProvider(CHAINS[token.chainId].rpc);
+        const gate = new ethers.Contract(status.mintGate, [
+          'function gateType() view returns (string)',
+          'function followTarget() view returns (address)',
+        ], p);
+        const gt: string = await gate.gateType();
+        if (gt.toLowerCase() === 'requirements') {
+          const addr: string = await gate.followTarget().catch(() => ZERO_ADDR);
+          if (addr !== ZERO_ADDR) {
+            let name = addr.slice(0, 6) + '…' + addr.slice(-4);
+            try {
+              const profile = await fetchProfileMeta(addr, token.chainId);
+              if (profile?.name) name = profile.name;
+            } catch {}
+            if (!cancelled) setFollowTarget({ addr: addr as `0x${string}`, name });
+          }
+        }
+      } catch {}
+    })();
+
     return () => { cancelled = true; };
-  }, [status.mintGate, token.chainId, hasGate]);
+  }, [status.mintGate, token.chainId, hasGate, userAddress]);
+
+  const handleFollow = async () => {
+    if (!followTarget || !onFollow) return;
+    setIsFollowPending(true);
+    try {
+      await onFollow(followTarget.addr);
+    } finally {
+      setIsFollowPending(false);
+    }
+  };
 
   if (!hasGate) return null;
   if (conditions.length === 0) return null;
@@ -198,6 +249,21 @@ export function GateRenderer({ token, status }: Props) {
           <span className="data-value">{c.progress}</span>
         </div>
       ))}
+      {followTarget && onFollow && userAddress && conditions.find(c => c.label === `Follow ${followTarget.name}`)?.passed === false && (
+        <div className="data-row" style={{ border: 'none' }}>
+          <span />
+          <span />
+          <span className="data-value">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleFollow}
+              disabled={isFollowPending}
+            >
+              {isFollowPending ? 'Following…' : 'Follow'}
+            </button>
+          </span>
+        </div>
+      )}
     </div>
   );
 }

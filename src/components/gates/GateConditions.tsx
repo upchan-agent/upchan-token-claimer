@@ -353,16 +353,9 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
                 ) : null}
                 {r.labelAfter}
               </span>
-              <StatusIcon value={r.passed} />
-              <span className="data-value">
-                {followInfo && i === 0 && r.passed === false && onFollow ? '' : r.value}
-              </span>
-            </div>
-            {followInfo && i === 0 && r.passed === false && onFollow && (
-              <div className="data-row" style={{ border: 'none' }}>
-                <span className="data-label" />
-                <span />
-                <span className="data-value">
+              {followInfo && i === 0 && r.passed === false && onFollow ? (
+                <div className="follow-icon-stack">
+                  <StatusIcon value={r.passed} />
                   <button
                     onClick={handleFollow}
                     disabled={followPending}
@@ -371,9 +364,11 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
                   >
                     {followPending ? 'Following…' : 'Follow'}
                   </button>
-                </span>
-              </div>
-            )}
+                </div>
+              ) : (
+                <StatusIcon value={r.passed} />
+              )}
+            </div>
           </div>
         ))}
       </div>

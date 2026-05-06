@@ -386,6 +386,16 @@ body {
   margin: 0;
 }
 
+/* ─── Follow icon stack (icon + button stacked vertically) ─── */
+
+.follow-icon-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3xs);
+  flex-shrink: 0;
+}
+
 /* ─── Action bar (inside card-block--action) ─── */
 
 .action-bar {

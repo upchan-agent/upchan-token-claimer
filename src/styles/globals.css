@@ -312,8 +312,7 @@ body {
 .card-section--center.card-block--xl {
   display: flex;
   flex-direction: column;
-  height: 260px;
-  overflow-y: auto;
+  min-height: 260px;
 }
 
 /* .card-section--center.card-block--xl > :last-child — removed, conditions-area has its own flex: 1 */

@@ -81,7 +81,12 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           <span className="conditions-group-header">Mint</span>
           <div className="conditions-group">
             {hasMintGate ? (
-              <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} />
+              <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} onFollow={async (target: `0x${string}`) => {
+                  const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
+                  const data = lsp26Iface.encodeFunctionData('follow', [target]);
+                  await sendTx('Follow Profile', LSP26_ADDRESS, data, token.chainId);
+                  onRefetch();
+                }} />
             ) : (
               <div className="data-row" style={{ border: 'none' }}>
                 <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>

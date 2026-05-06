@@ -339,20 +339,6 @@ body {
   min-height: 0;
 }
 
-.conditions-group {
-  display: flex;
-  flex-direction: column;
-  /* gap intentionally omitted — row height handled by condition-row padding */
-}
-
-.conditions-group-header + .conditions-group {
-  margin-top: var(--space-2xs);
-}
-
-.conditions-group + .conditions-group-header {
-  margin-top: var(--space-sm);
-}
-
 .conditions-group-header {
   font-size: 14px;
   font-weight: 600;
@@ -360,10 +346,7 @@ body {
   letter-spacing: -0.016em;
   color: var(--c-text);
   display: block;
-}
-
-.conditions-group-header + .conditions-group-header {
-  margin-top: var(--space-xs);
+  margin-bottom: var(--space-2xs);
 }
 
 .conditions-divider {

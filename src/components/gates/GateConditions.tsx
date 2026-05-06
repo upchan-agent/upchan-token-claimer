@@ -327,9 +327,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     return (
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
-        <div className="conditions-group">
-          <ConditionRow label="No restrictions" passed={null} />
-        </div>
+        <ConditionRow label="No restrictions" passed={null} />
       </div>
     );
   }
@@ -338,11 +336,9 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     return (
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
-        <div className="conditions-group">
-          {LOADING_ROWS.map((r, i) => (
+        {LOADING_ROWS.map((r, i) => (
             <ConditionRow key={i} {...r} />
           ))}
-        </div>
       </div>
     );
   }
@@ -351,9 +347,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     return (
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
-        <div className="conditions-group">
-          <ConditionRow label="No conditions set" passed={null} />
-        </div>
+        <ConditionRow label="No conditions set" passed={null} />
       </div>
     );
   }
@@ -361,8 +355,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
   return (
     <div className="conditions-block">
       <span className="conditions-group-header">{label}</span>
-      <div className="conditions-group">
-        {rows.map((r, i) => (
+      {rows.map((r, i) => (
           <ConditionRow
             key={i}
             {...r}
@@ -371,7 +364,6 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
             followPending={i === 0 ? followPending : false}
           />
         ))}
-      </div>
     </div>
   );
 }

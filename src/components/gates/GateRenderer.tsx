@@ -55,11 +55,11 @@ async function fetchTarget(addr: string, chainId: number): Promise<string | null
 
 // ─── Fetch conditions from any gate ──────────────────────
 
-async function fetchConditions(gateAddress: string, chainId: number, user: string | null): Promise<ConditionRow[]> {
-  if (gateAddress === ZERO_ADDR) return [];
+async function fetchConditions(gateAddress: string, chainId: number, user: string | null): Promise<{ conditions: ConditionRow[], followTarget: { addr: `0x${string}`, name: string } | null }> {
+  if (gateAddress === ZERO_ADDR) return { conditions: [], followTarget: null };
 
   const chain = CHAINS[chainId];
-  if (!chain) return [];
+  if (!chain) return { conditions: [], followTarget: null };
 
   try {
     const p = new ethers.JsonRpcProvider(chain.rpc);
@@ -74,7 +74,7 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
       try {
         const cg = new ethers.Contract(gateAddress, GATE_ABI.concat(COMPOSITE_ABI), p);
         children = await cg.getChildren();
-      } catch { return []; }
+      } catch { return { conditions: [], followTarget: null }; }
 
       const [, , progress] = await gate.check(checkUser);
       const parsed: ConditionRow[] = [];
@@ -103,7 +103,7 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
           }
         } catch { /* skip */ }
       }
-      return parsed;
+      return { conditions: parsed, followTarget: null };
     }
 
     // ─── RequirementsGate ───
@@ -121,6 +121,7 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
       ]);
 
       const parsed: ConditionRow[] = [];
+      let followTarget: { addr: `0x${string}`; name: string } | null = null;
 
       if (followAddr !== ZERO_ADDR) {
         let followOk = false;
@@ -137,6 +138,8 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
           const profile = await fetchProfileMeta(followAddr, chainId);
           if (profile?.name) displayName = profile.name;
         } catch {}
+
+        followTarget = { addr: followAddr as `0x${string}`, name: displayName };
 
         parsed.push({
           passed: followOk,
@@ -172,15 +175,15 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
         });
       }
 
-      return parsed;
+      return { conditions: parsed, followTarget };
     }
 
     // ─── Single gate ───
     const [, label, progress] = await gate.check(checkUser);
-    return [{ passed: false, label: label || type, progress }];
+    return { conditions: [{ passed: false, label: label || type, progress }], followTarget: null };
 
   } catch {
-    return [{ passed: false, label: 'Unknown condition', progress: '' }];
+    return { conditions: [{ passed: false, label: 'Unknown condition', progress: '' }], followTarget: null };
   }
 }
 
@@ -198,30 +201,10 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
     setFollowTarget(null);
 
     (async () => {
-      const result = await fetchConditions(status.mintGate, token.chainId, userAddress || null);
+      const { conditions: conds, followTarget: ft } = await fetchConditions(status.mintGate, token.chainId, userAddress || null);
       if (cancelled) return;
-      setConditions(result);
-
-      // Also resolve follow target info for the follow button
-      try {
-        const p = new ethers.JsonRpcProvider(CHAINS[token.chainId].rpc);
-        const gate = new ethers.Contract(status.mintGate, [
-          'function gateType() view returns (string)',
-          'function followTarget() view returns (address)',
-        ], p);
-        const gt: string = await gate.gateType();
-        if (gt.toLowerCase() === 'requirements') {
-          const addr: string = await gate.followTarget().catch(() => ZERO_ADDR);
-          if (addr !== ZERO_ADDR) {
-            let name = addr.slice(0, 6) + '…' + addr.slice(-4);
-            try {
-              const profile = await fetchProfileMeta(addr, token.chainId);
-              if (profile?.name) name = profile.name;
-            } catch {}
-            if (!cancelled) setFollowTarget({ addr: addr as `0x${string}`, name });
-          }
-        }
-      } catch {}
+      setConditions(conds);
+      if (ft) setFollowTarget(ft);
     })();
 
     return () => { cancelled = true; };

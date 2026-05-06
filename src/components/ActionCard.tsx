@@ -108,7 +108,6 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
                 gateAddress={status.holdGate}
                 chainId={token.chainId}
                 userAddress={displayAddress || actionUser}
-                isRevokable={status.revokable}
                 onFollow={async (target: `0x${string}`) => {
                   const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
                   const data = lsp26Iface.encodeFunctionData('follow', [target]);
@@ -128,6 +127,18 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           </div>
           </div>
         </div>
+        {hasHoldGate && status.revokable && (
+          <p style={{
+            margin: '4px 0 0', padding: '3px 8px',
+            background: 'color-mix(in srgb, var(--c-error, #ef4444) 8%, transparent)',
+            borderRadius: 'var(--radius-sm, 5px)',
+            fontSize: 10, lineHeight: 1.3,
+            color: 'var(--c-error, #ef4444)',
+            flexShrink: 0,
+          }}>
+            {'\u26A0\uFE0F'} Revokable Token — Owner may revoke if hold conditions unmet
+          </p>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════

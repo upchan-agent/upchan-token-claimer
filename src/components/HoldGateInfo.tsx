@@ -10,7 +10,6 @@ interface Props {
   gateAddress: `0x${string}`;
   chainId: number;
   userAddress: string | null;
-  isRevokable: boolean;
   onFollow?: (target: `0x${string}`) => Promise<void>;
 }
 
@@ -34,7 +33,7 @@ function ConditionIcon({ passed }: { passed: boolean }) {
  * Only shown when a hold gate is configured (ActionCard verifies hasHoldGate).
  * Revokable is also shown only when holdGate is set (revokeByGate requires it).
  */
-export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, onFollow }: Props) {
+export function HoldGateInfo({ gateAddress, chainId, userAddress, onFollow }: Props) {
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [followTarget, setFollowTarget] = useState<{ addr: `0x${string}`; name: string } | null>(null);
   const [isFollowPending, setIsFollowPending] = useState(false);
@@ -193,17 +192,6 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
             </button>
           </span>
         </div>
-      )}
-      {isRevokable && (
-        <p style={{
-          margin: '4px 0 0', padding: '3px 8px',
-          background: 'color-mix(in srgb, var(--c-error, #ef4444) 8%, transparent)',
-          borderRadius: 'var(--radius-sm, 5px)',
-          fontSize: 10, lineHeight: 1.3,
-          color: 'var(--c-error, #ef4444)',
-        }}>
-          {'\u26A0\uFE0F'} Revokable Token — Owner may revoke if hold conditions unmet
-        </p>
       )}
     </div>
   );

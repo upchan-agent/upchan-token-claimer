@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function ActionCard({ token, status, chain, onRefetch, displayAddress, walletAddress }: Props) {
-  const { accounts, isConnected } = useUpProvider();
+  const { accounts } = useUpProvider();
   const connectedWallet = accounts[0] || null;
   const actionUser = connectedWallet;
   const { sendTx } = useTxContext();
@@ -31,9 +31,11 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
   // ─── Derived state ───
   const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
   const hasHoldGate = status.holdGate !== '0x0000000000000000000000000000000000000000';
-  const isAtMaxBalance = status.balanceCap > 0 && status.userBalance >= status.balanceCap;
-  const hasTokens = status.userBalance > 0;
-  const isSoldOut = status.supplyCap > 0 && status.totalSupply >= status.supplyCap;
+  const isAtMaxBalance = status.balanceCap > 0n && status.userBalance >= status.balanceCap;
+  const hasTokens = status.userBalance > 0n;
+  const userBal = Number(status.userBalance);
+  const balCap = status.balanceCap > 0n ? Number(status.balanceCap) : null;
+  const isSoldOut = status.supplyCap > 0n && status.totalSupply >= status.supplyCap;
 
   // ─── Mint button (always in DOM, disabled states controlled) ───
   const mintDisabled = !connectedWallet || isAtMaxBalance || status.mintingDisabled || isSoldOut || !status.isMintable || mintPending;
@@ -63,8 +65,8 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
 
   // ─── Status line text (always present) ───
   const statusLine = !connectedWallet
-    ? 'Connect wallet to interact'
-    : `Connected · You hold ${status.userBalance}${status.balanceCap > 0 ? ` / ${status.balanceCap}` : ''}`;
+    ? 'Connect to interact'
+    : `Connected · You hold ${userBal}${balCap ? ` / ${balCap}` : ''}`;
 
   return (
     <div className="card anim anim-d3">
@@ -123,7 +125,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
            Actions — mint + burn buttons, fixed 80px
            ═══════════════════════════════════════════════════════ */}
       <div className="card-section card-section--center card-block--action">
-        <span className="section-label"><EmojiText>🐰 Actions 🐰</EmojiText></span>
+        <span className="section-label"><EmojiText>🐰 Claim&Action 🐰</EmojiText></span>
 
         <div className="action-bar">
           <button

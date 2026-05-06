@@ -1,12 +1,16 @@
 // ═══════════════════════════════════════════════
 // 🆙chan Token Claimer — Token Configuration
+//
+// フロントエンド起動用の最小コンフィグ。
+// 基本はオンチェーンから情報を取得する方針。
+// 管理用レジストリ（デプロイ記録・詳細パラメータ）は
+// config/tokens.json を参照。
 // ═══════════════════════════════════════════════
 
 export interface TokenConfig {
   id: string;
   proxy: `0x${string}`;
   chainId: number;
-  mintGate: `0x${string}`;
 }
 
 // ─── Gate Contract Interfaces ───
@@ -28,13 +32,11 @@ export const TOKENS: TokenConfig[] = [
     id: 'test-mint-v3',
     proxy: '0xB510Fdb260d12706a68C646dD309D0c6e0A41615',
     chainId: 4201,
-    mintGate: '0x0000000000000000000000000000000000000000',
   },
   {
     id: 'phlametoken',
     proxy: '0xe8731f5d5002e2261175afb970517d4c5dad028c',
     chainId: 42,
-    mintGate: '0x0000000000000000000000000000000000000000',
   }
 ];
 
@@ -71,5 +73,3 @@ export function assetUrl(address: string, chainId: number): string {
 export function profileUrl(address: string): string {
   return `https://universalprofile.cloud/${address}`;
 }
-
-

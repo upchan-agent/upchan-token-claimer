@@ -180,7 +180,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
         <Section label="Supply Cap" open={openSection === 'supply'} onToggle={() => handleToggle('supply')}>
           <div className="data-row">
             <span className="data-label">Supply</span>
-            <span className="data-value">{status.totalSupply} / {status.supplyCap}</span>
+            <span className="data-value">{Number(status.totalSupply)} / {status.supplyCap === 0n ? '∞' : String(status.supplyCap)}</span>
           </div>
           <div className="data-row">
             <span className="data-label">Cap</span>
@@ -195,12 +195,12 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                 placeholder="New cap"
                 className="owner-input"
                 style={{ width: 100 }}
-                min={status.totalSupply}
+                min={Number(status.totalSupply)}
               />
               <button
                 onClick={async () => {
                   const cap = BigInt(capInput || '0');
-                  if (cap < BigInt(status.totalSupply)) return;
+                  if (cap <= 0n || cap < status.totalSupply) return;
                   await actions.updateSupplyCap(cap);
                   onDone();
                 }}
@@ -370,25 +370,53 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
           )}
         </Section>
 
-        {/* Transfer */}
-        <Section label="Transfer" open={openSection === 'transfer'} onToggle={() => handleToggle('transfer')} danger>
-          {!status.isSoulbound ? (
-            <p className="text-caption" style={{ color: 'var(--c-text-tertiary)' }}>Already transferable.</p>
-          ) : (
+        {/* Danger Zone */}
+        <Section label="Danger Zone" open={openSection === 'danger'} onToggle={() => handleToggle('danger')} danger>
+          <p className="text-caption" style={{ color: 'var(--c-error)', marginBottom: 10, fontWeight: 600 }}>
+            {'\u26A0\uFE0F'} These actions are irreversible. Proceed with caution.
+          </p>
+
+          {/* Make Transferable */}
+          <div className="data-row" style={{ border: 'none' }}>
+            <span className="data-label">Soulbound</span>
+            {status.isSoulbound ? (
+              <button
+                onClick={async () => {
+                  if (window.confirm('Make transferable permanently?')) {
+                    await actions.makeTransferable();
+                    onDone();
+                  }
+                }}
+                disabled={actions.isPending}
+                className="btn btn-secondary btn-sm"
+                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+              >
+                Make Transferable
+              </button>
+            ) : (
+              <span className="data-value text-caption" style={{ color: 'var(--c-text-tertiary)' }}>Already transferable</span>
+            )}
+          </div>
+
+          {/* Renounce Ownership */}
+          <div className="data-row" style={{ border: 'none', marginTop: 8 }}>
+            <span className="data-label">Ownership</span>
             <button
               onClick={async () => {
-                if (window.confirm('Make transferable permanently?')) {
-                  await actions.makeTransferable();
-                  onDone();
+                if (window.confirm('Are you sure? This permanently renounces ownership.\n\nAfter this:\n- Gate and supply cap settings become permanent\n- Minting can never be re-enabled if disabled\n- No one can ever modify this token again')) {
+                  if (window.confirm('FINAL WARNING: This action CANNOT be undone. Renounce ownership?')) {
+                    await actions.renounceOwnership();
+                    onDone();
+                  }
                 }
               }}
               disabled={actions.isPending}
               className="btn btn-secondary btn-sm"
               style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
             >
-              Make Transferable
+              Renounce Ownership
             </button>
-          )}
+          </div>
         </Section>
 
       </div>

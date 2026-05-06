@@ -8,14 +8,14 @@ import { EIP1193Provider } from './up-provider';
 import { useTxContext } from './tx-context';
 
 export interface TokenStatus {
-  totalSupply: number;
-  supplyCap: number;
-  userBalance: number;
+  totalSupply: bigint;
+  supplyCap: bigint;
+  userBalance: bigint;
   isMintable: boolean;
   mintingDisabled: boolean;
   isSoulbound: boolean;
   revokable: boolean;
-  balanceCap: number;
+  balanceCap: bigint;
   isSupplyCapLocked: boolean;
   isFollowing: boolean;
   mintGate: `0x${string}`;
@@ -32,13 +32,13 @@ export interface TokenStatus {
 }
 
 interface ServerData {
-  totalSupply: number;
-  supplyCap: number;
+  totalSupply: bigint;
+  supplyCap: bigint;
   isMintable: boolean;
   mintingDisabled: boolean;
   isSoulbound: boolean;
   revokable: boolean;
-  balanceCap: number;
+  balanceCap: bigint;
   isSupplyCapLocked: boolean;
   mintGate: `0x${string}`;
   holdGate: `0x${string}`;
@@ -67,13 +67,13 @@ const TOKEN_ABI = [
 const DEFAULT_GATE = '0x0000000000000000000000000000000000000000' as const;
 
 const SERVER_DEFAULTS: ServerData = {
-  totalSupply: 0,
-  supplyCap: 0,
+  totalSupply: 0n,
+  supplyCap: 0n,
   isMintable: false,
   mintingDisabled: false,
   isSoulbound: true,
   revokable: false,
-  balanceCap: 0,
+  balanceCap: 0n,
   isSupplyCapLocked: false,
   mintGate: DEFAULT_GATE,
   holdGate: DEFAULT_GATE,
@@ -91,13 +91,13 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
   const [ts, im, md, isb, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own] = await Promise.all([
-    c.totalSupply().catch(() => 0),
+    c.totalSupply().catch(() => 0n),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
     c.isSoulbound().catch(() => true),
     c.revokable().catch(() => false),
-    c.flexibleSupplyCap().catch(() => 0),
-    c.tokenBalanceCap().catch(() => 0),
+    c.flexibleSupplyCap().catch(() => 0n),
+    c.tokenBalanceCap().catch(() => 0n),
     c.isSupplyCapLocked().catch(() => false),
     c.mintGate().catch(() => DEFAULT_GATE),
     c.holdGate().catch(() => DEFAULT_GATE),
@@ -107,13 +107,13 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   ]);
 
   return {
-    totalSupply: Number(ts),
-    supplyCap: Number(fsc) || Infinity,
+    totalSupply: ts as bigint,
+    supplyCap: fsc as bigint,
     isMintable: !!im,
     mintingDisabled: !!md,
     isSoulbound: !!isb,
     revokable: !!rev,
-    balanceCap: Number(tbc),
+    balanceCap: tbc as bigint,
     isSupplyCapLocked: !!iscf,
     mintGate: ethers.getAddress(mg) as `0x${string}`,
     holdGate: ethers.getAddress(hg) as `0x${string}`,
@@ -157,7 +157,7 @@ export function useTokenStatus(
     queryFn: () => fetchUserBalance(token!, userAddress!),
     enabled: !!token && !!userAddress,
   });
-  const userBalance = balanceQuery.data ?? 0;
+  const userBalance = balanceQuery.data ?? 0n;
 
   // Tier 3: Gate permissions (depends on server mintGate + userAddress)
   const gateQuery = useQuery({
@@ -165,7 +165,7 @@ export function useTokenStatus(
     queryFn: () => fetchGateCanMint(server.mintGate, userAddress!, token!.chainId),
     enabled: !!token && !!userAddress && server.mintGate !== DEFAULT_GATE,
   });
-  const canMintViaGate = gateQuery.data ?? true;
+  const canMintViaGate = server.mintGate === DEFAULT_GATE ? true : (gateQuery.data ?? false);
 
   // ─── Merge all tiers into single TokenStatus ───
   const merged: TokenStatus = useMemo(() => ({
@@ -176,8 +176,8 @@ export function useTokenStatus(
       server.isMintable &&
       !server.mintingDisabled &&
       canMintViaGate &&
-      (server.balanceCap === 0 || userBalance < server.balanceCap) &&
-      server.totalSupply < server.supplyCap,
+      (server.balanceCap === 0n || userBalance < server.balanceCap) &&
+      (server.supplyCap === 0n || server.totalSupply < server.supplyCap),
     isLoading: serverQuery.isLoading,
     isUserDataReady: !balanceQuery.isLoading && !gateQuery.isLoading,
     isFetching:
@@ -205,13 +205,13 @@ export function useTokenStatus(
 
 // ─── Separate tiny fetchers for query isolation ───
 
-async function fetchUserBalance(token: TokenConfig, userAddress: string): Promise<number> {
+async function fetchUserBalance(token: TokenConfig, userAddress: string): Promise<bigint> {
   const chain = CHAINS[token.chainId];
-  if (!chain) return 0;
+  if (!chain) return 0n;
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
-  const [bal] = await Promise.all([c.balanceOf(userAddress).catch(() => 0)]);
-  return Number(bal);
+  const [bal] = await Promise.all([c.balanceOf(userAddress).catch(() => 0n)]);
+  return bal as bigint;
 }
 
 async function fetchGateCanMint(

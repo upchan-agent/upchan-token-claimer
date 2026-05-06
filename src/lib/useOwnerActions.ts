@@ -17,6 +17,7 @@ const ABI = [
   'function revokeByGate(address from, address to, uint256 amount, bytes data)',
   'function setData(bytes32, bytes)',
   'function makeTransferable()',
+  'function renounceOwnership()',
 ];
 
 const LSP4_TOKEN_NAME = '0xdeba1e292f8ba88238e10ab3c7f88bd4be4fac56cad5194b6ecceaf653468af1';
@@ -81,6 +82,9 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
   // ─── Transfer ───
   const makeTransferable = useCallback(() => a('makeTransferable', 'Make Transferable', [])(), [a]);
 
+  // ─── Ownership ───
+  const renounceOwnership = useCallback(() => a('renounceOwnership', 'Renounce Ownership', [])(), [a]);
+
   return {
     isPending: pendingKey !== null,
     pendingKey,
@@ -96,5 +100,6 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     setTokenName,
     setTokenSymbol,
     makeTransferable,
+    renounceOwnership,
   } as const;
 }

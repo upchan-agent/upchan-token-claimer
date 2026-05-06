@@ -182,10 +182,15 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
         </div>
       )}
       {isRevokable && (
-        <div className="data-row" style={{ border: 'none' }}>
-          <span className="data-label">Revokable</span>
-          <span className="status-icon--yes"><YesIcon size={14} /></span>
-          <span className="data-value">Owner may revoke if hold conditions unmet</span>
+        <div className="status-message" style={{
+          marginTop: 8, padding: '6px 10px',
+          background: 'color-mix(in srgb, var(--c-error, #ef4444) 10%, transparent)',
+          borderRadius: 'var(--radius-md, 8px)',
+          fontSize: 11, lineHeight: 1.4,
+          color: 'var(--c-error, #ef4444)',
+        }}>
+          <strong>{'\u26A0\uFE0F'} Revokable Token</strong><br />
+          If hold conditions are not met, the owner may revoke (confiscate) your tokens.
         </div>
       )}
     </div>

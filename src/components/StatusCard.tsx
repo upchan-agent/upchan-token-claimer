@@ -36,9 +36,10 @@ function StatusIcon({ value }: { value: PropValue }) {
 }
 
 export function StatusCard({ token, status, chain }: Props) {
-  const displayCap = status.supplyCap;
-  const pct = displayCap > 0
-    ? Math.min((status.totalSupply / displayCap) * 100, 100)
+  const supplyCapNum = status.supplyCap === 0n ? null : Number(status.supplyCap);
+  const totalSupplyNum = Number(status.totalSupply);
+  const pct = supplyCapNum
+    ? Math.min((totalSupplyNum / supplyCapNum) * 100, 100)
     : 0;
 
   const statusClass = status.mintingDisabled
@@ -68,8 +69,8 @@ export function StatusCard({ token, status, chain }: Props) {
     },
     {
       label: 'Balance Cap',
-      value: load ? 'none' : (status.balanceCap > 0 ? 'yes' : 'none'),
-      display: load ? '-' : (status.balanceCap > 0 ? String(status.balanceCap) : '-'),
+      value: load ? 'none' : (status.balanceCap > 0n ? 'yes' : 'none'),
+      display: load ? '-' : (status.balanceCap > 0n ? String(status.balanceCap) : '-'),
     },
     {
       label: 'Cap Status',
@@ -132,7 +133,7 @@ export function StatusCard({ token, status, chain }: Props) {
           <span className="data-label">Supply</span>
           <span className="data-value">
             <div className="progress-fill" style={{ width: `${pct}%` }} />
-            <span>{status.totalSupply} / {displayCap}</span>
+            <span>{totalSupplyNum} / {supplyCapNum ?? '∞'}</span>
           </span>
         </div>
       </div>

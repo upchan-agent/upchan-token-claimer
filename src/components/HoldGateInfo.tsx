@@ -40,10 +40,21 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, onFollow }: Pr
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!userAddress) return;
+    if (!userAddress) {
+      setConditions([]);
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
     setFollowTarget(null);
     setIsLoading(true);
+
+    const fetchTimeout = setTimeout(() => {
+      if (!cancelled) {
+        setConditions([]);
+        setIsLoading(false);
+      }
+    }, 15000);
 
     (async () => {
       try {
@@ -132,23 +143,24 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, onFollow }: Pr
 
           if (cancelled) return;
           setConditions(rows);
-          if (!cancelled) setIsLoading(false);
+          if (!cancelled) { setIsLoading(false); clearTimeout(fetchTimeout); }
           return;
         }
 
         const [, label, progress] = await gate.check(userAddress);
         if (cancelled) return;
         setConditions([{ passed: false, label: label || gt, progress }]);
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) { setIsLoading(false); clearTimeout(fetchTimeout); }
       } catch {
         if (!cancelled) {
           setConditions([]);
           setIsLoading(false);
+          clearTimeout(fetchTimeout);
         }
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(fetchTimeout); };
   }, [gateAddress, chainId, userAddress]);
 
   const handleFollow = async () => {

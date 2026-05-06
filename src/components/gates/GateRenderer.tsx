@@ -202,15 +202,23 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
     setFollowTarget(null);
     setIsLoading(true);
 
+    const fetchTimeout = setTimeout(() => {
+      if (!cancelled) {
+        setConditions([]);
+        setIsLoading(false);
+      }
+    }, 15000);
+
     (async () => {
       const { conditions: conds, followTarget: ft } = await fetchConditions(status.mintGate, token.chainId, userAddress || null);
       if (cancelled) return;
+      clearTimeout(fetchTimeout);
       setConditions(conds);
       if (ft) setFollowTarget(ft);
       setIsLoading(false);
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(fetchTimeout); };
   }, [status.mintGate, token.chainId, hasGate, userAddress]);
 
   const handleFollow = async () => {

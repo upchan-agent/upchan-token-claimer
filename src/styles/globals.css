@@ -162,8 +162,8 @@ body {
 .view-badge {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-sm);
   border-radius: var(--radius-pill);
   background: rgba(0, 113, 227, 0.08);
   border: 1px solid rgba(0, 113, 227, 0.2);

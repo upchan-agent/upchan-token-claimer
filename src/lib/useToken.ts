@@ -167,6 +167,15 @@ export function useTokenStatus(
   });
   const canMintViaGate = server.mintGate === DEFAULT_GATE ? true : (gateQuery.data ?? false);
 
+  // ─── Stable refetch — useCallback so it doesn't recreate on every isFetching toggle ───
+  const refetch = useCallback(async () => {
+    await Promise.all([
+      serverQuery.refetch(),
+      balanceQuery.refetch(),
+      gateQuery.refetch(),
+    ]);
+  }, [serverQuery.refetch, balanceQuery.refetch, gateQuery.refetch]);
+
   // ─── Merge all tiers into single TokenStatus ───
   const merged: TokenStatus = useMemo(() => ({
     ...server,
@@ -187,18 +196,11 @@ export function useTokenStatus(
       balanceQuery.error?.message ??
       gateQuery.error?.message ??
       null,
-    refetch: async () => {
-      await Promise.all([
-        serverQuery.refetch(),
-        balanceQuery.refetch(),
-        gateQuery.refetch(),
-      ]);
-    },
+    refetch,
   }), [server, userBalance, canMintViaGate, serverQuery.isLoading, serverQuery.isFetching,
       balanceQuery.isFetching, gateQuery.isLoading, gateQuery.isFetching,
       balanceQuery.isLoading, serverQuery.error,
-      balanceQuery.error, gateQuery.error, serverQuery.refetch,
-      balanceQuery.refetch, gateQuery.refetch]);
+      balanceQuery.error, gateQuery.error, refetch]);
 
   return merged;
 }

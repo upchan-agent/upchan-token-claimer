@@ -197,7 +197,7 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasGate) { setConditions([]); setIsLoading(false); return; }
+    if (!hasGate || !userAddress) { setConditions([]); setIsLoading(false); return; }
     let cancelled = false;
     setFollowTarget(null);
     setIsLoading(true);

@@ -22,11 +22,11 @@ interface Props {
 export function ActionCard({ token, status, chain, onRefetch, displayAddress, walletAddress }: Props) {
   const { accounts } = useUpProvider();
   const connectedWallet = accounts[0] || null;
-  const actionUser = connectedWallet;
+  const mintTarget = displayAddress || connectedWallet;
   const { sendTx } = useTxContext();
 
-  const { mint, isPending: mintPending } = useMint(token, actionUser, onRefetch);
-  const { burn, isPending: burnPending } = useBurn(token, actionUser, onRefetch);
+  const { mint, isPending: mintPending } = useMint(token, mintTarget, onRefetch);
+  const { burn, isPending: burnPending } = useBurn(token, connectedWallet, onRefetch);
 
   // ─── Derived state ───
   const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
@@ -51,9 +51,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
             ? 'Sold Out'
             : !status.isMintable
               ? 'Paused'
-              : status.canMint
-                ? 'Mint NFT'
-                : 'Locked';
+              : 'Mint NFT';
 
   // ─── Burn button ───
   const burnDisabled = !connectedWallet || !hasTokens || burnPending;
@@ -107,7 +105,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
               <HoldGateInfo
                 gateAddress={status.holdGate}
                 chainId={token.chainId}
-                userAddress={displayAddress || actionUser}
+                userAddress={displayAddress || connectedWallet}
                 onFollow={async (target: `0x${string}`) => {
                   const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
                   const data = lsp26Iface.encodeFunctionData('follow', [target]);

@@ -89,8 +89,7 @@ function GatePicker({
               if (window.confirm(lockLabel + '? This cannot be undone!')) onLock();
             }}
             disabled={disabled}
-            className="btn btn-secondary btn-sm"
-            style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+            className="btn btn-secondary btn-sm btn-danger"
           >
             {lockLabel}
           </button>
@@ -162,8 +161,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   }
                 }}
                 disabled={actions.isPending}
-                className="btn btn-secondary btn-sm"
-                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                className="btn btn-secondary btn-sm btn-danger"
               >
                 Disable
               </button>
@@ -217,8 +215,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   }
                 }}
                 disabled={actions.isPending}
-                className="btn btn-secondary btn-sm"
-                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                className="btn btn-secondary btn-sm btn-danger"
               >
                 Lock
               </button>
@@ -259,8 +256,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   if (window.confirm('Lock Mint Gate?')) { await actions.lockMintGate(); onDone(); }
                 }}
                 disabled={actions.isPending}
-                className="btn btn-secondary btn-sm"
-                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                className="btn btn-secondary btn-sm btn-danger"
               >
                 Lock
               </button>
@@ -305,8 +301,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   if (window.confirm('Lock Hold Gate?')) { await actions.lockHoldGate(); onDone(); }
                 }}
                 disabled={actions.isPending}
-                className="btn btn-secondary btn-sm"
-                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                className="btn btn-secondary btn-sm btn-danger"
               >
                 Lock
               </button>
@@ -393,8 +388,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                     }
                   }}
                   disabled={actions.isPending}
-                  className="btn btn-secondary btn-sm"
-                  style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                  className="btn btn-secondary btn-sm btn-danger"
                 >
                   Make Transferable
                 </button>
@@ -418,8 +412,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   }
                 }}
                 disabled={actions.isPending}
-                className="btn btn-secondary btn-sm"
-                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                className="btn btn-secondary btn-sm btn-danger"
               >
                 Renounce Ownership
               </button>

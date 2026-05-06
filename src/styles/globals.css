@@ -387,8 +387,8 @@ body {
 /* ─── Revokable token warning ─── */
 
 .revoke-warning {
-  margin: 4px 0 0;
-  padding: 3px 8px;
+  margin: var(--space-2xs) 0 0;
+  padding: var(--space-2xs) var(--space-sm);
   background: color-mix(in srgb, var(--c-error, #ef4444) 8%, transparent);
   border-radius: var(--radius-sm, 5px);
   font-size: 10px;
@@ -498,6 +498,12 @@ body {
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 400;
+}
+
+/* Danger variant — red text/border for destructive actions */
+.btn-danger {
+  color: var(--c-error);
+  border-color: var(--c-error);
 }
 
 /* Small button (replaces .btn-header) */
@@ -1203,7 +1209,7 @@ select.owner-input {
 
 /* Owner panel data rows — use existing .data-row with increased gap */
 .owner-section-body .data-row {
-  gap: 8px;
+  gap: var(--space-sm);
   min-height: 32px;
 }
 

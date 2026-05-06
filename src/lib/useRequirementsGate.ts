@@ -108,7 +108,7 @@ export function useRequirementsGate(gateAddress: string | null, chainId: number)
 
   const setAll = useCallback(
     (follow: string, lyx: string, followers: number, tokenReqs: { token: string; amount: number }[], orMode: boolean) =>
-      callGate('function setAll(address,uint256,uint256,(address,uint256)[],bool)', [follow, BigInt(lyx || '0'), followers, tokenReqs, orMode], 'Save All Conditions'),
+      callGate('function setAll(address,uint256,uint256,(address,uint256)[],bool)', [follow, BigInt(lyx || '0'), followers, tokenReqs.map(t => [t.token, BigInt(t.amount)]), orMode], 'Save All Conditions'),
     [callGate],
   );
 

@@ -5,9 +5,7 @@ import { useUpProvider } from '@/lib/up-provider';
 import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
 import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
-import { DashIcon } from './Icons';
-import { GateRenderer } from './gates/GateRenderer';
-import { HoldGateInfo } from './HoldGateInfo';
+import { GateConditions } from './gates/GateConditions';
 import { useTxContext } from '@/lib/tx-context';
 
 interface Props {
@@ -77,53 +75,28 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
 
         <div className="conditions-area">
-          <div className="conditions-block">
-          <span className="conditions-group-header">Mint</span>
-          <div className="conditions-group">
-            {hasMintGate ? (
-              <GateRenderer token={token} status={status} onRefetch={onRefetch} userAddress={displayAddress} onFollow={async (target: `0x${string}`) => {
-                  const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
-                  const data = lsp26Iface.encodeFunctionData('follow', [target]);
-                  await sendTx('Follow Profile', LSP26_ADDRESS, data, token.chainId);
-                  onRefetch();
-                }} />
-            ) : (
-              <div className="data-row" style={{ border: 'none' }}>
-                <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
-                  No mint restrictions
-                </span>
-                <span className="status-icon--none"><DashIcon size={14} /></span>
-                <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
-              </div>
-            )}
-          </div>
-          </div>
-          <div className="conditions-block">
-          <span className="conditions-group-header">Hold</span>
-          <div className="conditions-group">
-            {hasHoldGate ? (
-              <HoldGateInfo
-                gateAddress={status.holdGate}
-                chainId={token.chainId}
-                userAddress={displayAddress || connectedWallet}
-                onFollow={async (target: `0x${string}`) => {
-                  const lsp26Iface = new ethers.Interface(['function follow(address addr) external']);
-                  const data = lsp26Iface.encodeFunctionData('follow', [target]);
-                  await sendTx('Follow Profile', LSP26_ADDRESS, data, token.chainId);
-                  onRefetch();
-                }}
-              />
-            ) : (
-              <>
-                <div className="data-row" style={{ border: 'none' }}>
-                  <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>No holding restrictions</span>
-                  <span className="status-icon--none"><DashIcon size={14} /></span>
-                  <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
-                </div>
-              </>
-            )}
-          </div>
-          </div>
+          <GateConditions
+            gateAddress={status.mintGate}
+            chainId={token.chainId}
+            userAddress={displayAddress || connectedWallet}
+            label="Mint"
+            onFollow={async (target: `0x${string}`) => {
+              const iface = new ethers.Interface(['function follow(address addr) external']);
+              await sendTx('Follow Profile', LSP26_ADDRESS, iface.encodeFunctionData('follow', [target]), token.chainId);
+              onRefetch();
+            }}
+          />
+          <GateConditions
+            gateAddress={status.holdGate}
+            chainId={token.chainId}
+            userAddress={displayAddress || connectedWallet}
+            label="Hold"
+            onFollow={async (target: `0x${string}`) => {
+              const iface = new ethers.Interface(['function follow(address addr) external']);
+              await sendTx('Follow Profile', LSP26_ADDRESS, iface.encodeFunctionData('follow', [target]), token.chainId);
+              onRefetch();
+            }}
+          />
         </div>
         {hasHoldGate && status.revokable && (
           <p style={{

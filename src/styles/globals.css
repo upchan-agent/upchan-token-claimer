@@ -312,14 +312,13 @@ body {
 /* ─── Card section fixed-height blocks ─── */
 
 .card-block--xl {
-  min-height: 180px;
+  min-height: 130px;
 }
 
 .card-block--action {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
-  min-height: 80px;
 }
 
 /* Small card block: standalone use */

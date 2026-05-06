@@ -28,7 +28,6 @@ function StatusIcon({ value }: { value: boolean | null }) {
 interface Row {
   label: string;
   passed: boolean | null;
-  value: string;
   linkDisplay?: string;
   linkUrl?: string;
   labelAfter?: string;
@@ -102,8 +101,8 @@ async function buildRows(
 
   if (gt !== 'requirements') {
     if (noUser) return { rows: defaultRows(), followInfo: null, isFollowing: false, hasConfig: false };
-    const [, checkLabel, progress] = await gate.check(userAddress);
-    return { rows: [{ label: checkLabel, passed: false, value: progress }], followInfo: null, isFollowing: false, hasConfig: true };
+    const [, checkLabel] = await gate.check(userAddress);
+    return { rows: [{ label: checkLabel, passed: false }], followInfo: null, isFollowing: false, hasConfig: true };
   }
 
   const REQ_ABI = [
@@ -131,13 +130,15 @@ async function buildRows(
 
   // ─── Follow ───
   if (followAddr !== ZERO) {
+    // Always fetch profile name (regardless of connection state)
     let name = followAddr.slice(0, 6) + '…' + followAddr.slice(-4);
+    try {
+      const pn = await fetchProfileName(followAddr, chainId);
+      if (pn) name = pn;
+    } catch {}
+
     let fOk = false;
     if (!noUser) {
-      try {
-        const pn = await fetchProfileName(followAddr, chainId);
-        if (pn) name = pn;
-      } catch {}
       try {
         const iface = new ethers.Interface(['function isFollowing(address,address) view returns (bool)']);
         const data = iface.encodeFunctionData('isFollowing', [userAddress, followAddr]);
@@ -153,33 +154,31 @@ async function buildRows(
       linkUrl: profileUrl(followAddr),
       labelAfter: '',
       passed: noUser ? null : fOk,
-      value: noUser ? '-' : (fOk ? 'Following' : 'Not following'),
     });
   } else {
-    rows.push({ label: 'Follow', passed: null, value: '-' });
+    rows.push({ label: 'Follow', passed: null });
   }
 
   // ─── LYX Balance ───
   if (minBalNum > 0n) {
     const lyxStr = ethers.formatEther(minBalNum).slice(0, 6);
     if (noUser) {
-      rows.push({ label: `\u2265 ${lyxStr} LYX`, passed: null, value: '-' });
+      rows.push({ label: `\u2265 ${lyxStr} LYX`, passed: null });
     } else {
       const bal = await p.getBalance(userAddress);
       rows.push({
         label: `\u2265 ${lyxStr} LYX`,
         passed: bal >= minBalNum,
-        value: bal >= minBalNum ? `${ethers.formatEther(bal).slice(0, 6)} LYX` : `Need ${lyxStr} LYX`,
       });
     }
   } else {
-    rows.push({ label: '\u2265 0 LYX', passed: null, value: '-' });
+    rows.push({ label: '\u2265 0 LYX', passed: null });
   }
 
   // ─── Followers ───
   if (minFolNum > 0n) {
     if (noUser) {
-      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: null, value: '-' });
+      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: null });
     } else {
       let count = BigInt(0);
       try {
@@ -188,10 +187,10 @@ async function buildRows(
         const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
         count = iface.decodeFunctionResult('totalFollowersOf', r)[0] as bigint;
       } catch {}
-      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: count >= minFolNum, value: `${count} / ${minFolNum}` });
+      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: count >= minFolNum });
     }
   } else {
-    rows.push({ label: '\u2265 0 Followers', passed: null, value: '-' });
+    rows.push({ label: '\u2265 0 Followers', passed: null });
   }
 
   // ─── Token Requirements ───
@@ -207,7 +206,6 @@ async function buildRows(
           linkUrl: assetUrl(r.token, chainId),
           labelAfter: '',
           passed: null,
-          value: '-',
         });
       } else {
         let bal = BigInt(0);
@@ -217,14 +215,12 @@ async function buildRows(
           const res = await p.call({ to: r.token, data });
           bal = iface.decodeFunctionResult('balanceOf', res)[0] as bigint;
         } catch {}
-        const ok = bal >= r.minAmount;
         rows.push({
           label: `\u2265 ${r.minAmount} `,
           linkDisplay: sym,
           linkUrl: assetUrl(r.token, chainId),
           labelAfter: '',
-          passed: ok,
-          value: ok ? 'Held' : `Need ${r.minAmount}`,
+          passed: bal >= r.minAmount,
         });
       }
     }
@@ -235,24 +231,28 @@ async function buildRows(
 
 function defaultRows(): Row[] {
   return [
-    { label: 'Follow', passed: null, value: '-' },
-    { label: '\u2265 0 LYX', passed: null, value: '-' },
-    { label: '\u2265 0 Followers', passed: null, value: '-' },
+    { label: 'Follow', passed: null },
+    { label: '\u2265 0 LYX', passed: null },
+    { label: '\u2265 0 Followers', passed: null },
   ];
 }
 
 const LOADING_ROWS: Row[] = [
-  { label: 'Follow', passed: null, value: '-' },
-  { label: '\u2265 0 LYX', passed: null, value: '-' },
-  { label: '\u2265 0 Followers', passed: null, value: '-' },
-  { label: 'Token', passed: null, value: '-' },
+  { label: 'Follow', passed: null },
+  { label: '\u2265 0 LYX', passed: null },
+  { label: '\u2265 0 Followers', passed: null },
+  { label: 'Token', passed: null },
 ];
 
-// ─── Condition row: 2-column (label | icon + value) for gate conditions ───
+// ─── Condition row: 2-column (label | icon, follow button below icon) ───
 
-function ConditionRow({ label, passed, value, linkDisplay, linkUrl, labelAfter }: Row) {
-  // Hide data-value when unevaluated (passed=null): StatusIcon DashIcon already indicates the state
-  const showValue = passed !== null || value !== '-';
+function ConditionRow({ label, passed, linkDisplay, linkUrl, labelAfter, followInfo, onFollow, followPending }: Row & {
+  followInfo?: { addr: `0x${string}`; name: string } | null;
+  onFollow?: () => Promise<void>;
+  followPending?: boolean;
+}) {
+  const showFollow = followInfo && passed === false && onFollow;
+
   return (
     <div className="condition-row">
       <span className="data-label">
@@ -264,7 +264,16 @@ function ConditionRow({ label, passed, value, linkDisplay, linkUrl, labelAfter }
       </span>
       <span className="condition-row__right">
         <StatusIcon value={passed} />
-        {showValue && <span className="data-value">{value}</span>}
+        {showFollow && (
+          <button
+            onClick={onFollow}
+            disabled={followPending}
+            className="btn btn-primary btn-sm"
+            style={{ fontSize: 12, padding: '2px 10px' }}
+          >
+            {followPending ? 'Following…' : 'Follow'}
+          </button>
+        )}
       </span>
     </div>
   );
@@ -319,7 +328,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
         <div className="conditions-group">
-          <ConditionRow label="No restrictions" passed={null} value="-" />
+          <ConditionRow label="No restrictions" passed={null} />
         </div>
       </div>
     );
@@ -343,7 +352,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
         <div className="conditions-group">
-          <ConditionRow label="No conditions set" passed={null} value="-" />
+          <ConditionRow label="No conditions set" passed={null} />
         </div>
       </div>
     );
@@ -354,22 +363,13 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <span className="conditions-group-header">{label}</span>
       <div className="conditions-group">
         {rows.map((r, i) => (
-          <div key={i}>
-            <ConditionRow {...r} />
-            {/* Follow button: outside data-row so icon position stays aligned */}
-            {followInfo && i === 0 && r.passed === false && onFollow && (
-              <div className="follow-trigger-row">
-                <button
-                  onClick={handleFollow}
-                  disabled={followPending}
-                  className="btn btn-primary btn-sm"
-                  style={{ fontSize: 12, padding: '2px 10px' }}
-                >
-                  {followPending ? 'Following…' : 'Follow'}
-                </button>
-              </div>
-            )}
-          </div>
+          <ConditionRow
+            key={i}
+            {...r}
+            followInfo={followInfo && i === 0 ? followInfo : null}
+            onFollow={i === 0 ? handleFollow : undefined}
+            followPending={i === 0 ? followPending : false}
+          />
         ))}
       </div>
     </div>

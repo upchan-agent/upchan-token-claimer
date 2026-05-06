@@ -397,15 +397,6 @@ body {
   flex-shrink: 0;
 }
 
-/* ─── Follow trigger (outside data-row for SVG alignment) ─── */
-
-.follow-trigger-row {
-  display: flex;
-  justify-content: flex-start;
-  padding-left: 18px;
-  margin-top: var(--space-3xs);
-}
-
 /* ─── Action bar (inside card-block--action) ─── */
 
 .action-bar {
@@ -623,17 +614,13 @@ body {
   padding: var(--space-2xs) 0;
 }
 
-.condition-row .data-value {
-  grid-column: unset;
-}
-
-/* ─── Condition row right side: icon + value horizontal pair ─── */
+/* ─── Condition row right side: icon + optional follow button below ─── */
 
 .condition-row__right {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
-  white-space: nowrap;
+  gap: var(--space-3xs);
 }
 
 /* ─── TX Hash display (deprecated — use TxIndicator) ─── */

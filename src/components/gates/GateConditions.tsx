@@ -270,29 +270,23 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <span className="conditions-group-header">{label}</span>
       <div className="conditions-group">
         {rows.map((r, i) => (
-          <div key={i}>
-            <div className="data-row" style={{ border: 'none' }}>
-              <span className="data-label">{r.label}</span>
-              <StatusIcon value={r.passed} />
-              <span className="data-value">{r.value}</span>
-            </div>
-            {/* Follow button on second row when not following */}
-            {followInfo && i === 0 && r.passed === false && onFollow && (
-              <div className="data-row" style={{ border: 'none', marginTop: 2 }}>
-                <span className="data-label" />
-                <span />
-                <span className="data-value">
-                  <button
-                    onClick={handleFollow}
-                    disabled={followPending}
-                    className="btn btn-primary btn-sm"
-                    style={{ fontSize: 12, padding: '2px 10px' }}
-                  >
-                    {followPending ? 'Following…' : 'Follow'}
-                  </button>
-                </span>
-              </div>
-            )}
+          <div key={i} className="data-row" style={{ border: 'none' }}>
+            <span className="data-label">{r.label}</span>
+            <StatusIcon value={r.passed} />
+            <span className="data-value">
+              {followInfo && i === 0 && r.passed === false && onFollow ? (
+                <button
+                  onClick={handleFollow}
+                  disabled={followPending}
+                  className="btn btn-primary btn-sm"
+                  style={{ fontSize: 12, padding: '2px 10px' }}
+                >
+                  {followPending ? 'Following…' : 'Follow'}
+                </button>
+              ) : (
+                r.value
+              )}
+            </span>
           </div>
         ))}
       </div>

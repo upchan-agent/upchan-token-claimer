@@ -26,12 +26,12 @@ function StatusIcon({ value }: { value: boolean | null }) {
 }
 
 interface Row {
-  label: string;              // Static label prefix, e.g. "Follow " or "Token: "
+  label: string;
   passed: boolean | null;
   value: string;
-  linkDisplay?: string;       // Clickable name text, e.g. "🆙chan" or "LYS"
-  linkUrl?: string;           // URL for the name link
-  labelAfter?: string;        // Text after the link, e.g. " ≥ 1"
+  linkDisplay?: string;
+  linkUrl?: string;
+  labelAfter?: string;
 }
 
 /** Fetch profile name from Envio Profile table. */
@@ -248,6 +248,28 @@ const LOADING_ROWS: Row[] = [
   { label: 'Token:', passed: null, value: '-' },
 ];
 
+// ─── Condition row: 2-column (label | icon + value) for gate conditions ───
+
+function ConditionRow({ label, passed, value, linkDisplay, linkUrl, labelAfter }: Row) {
+  // Hide data-value when unevaluated (passed=null): StatusIcon DashIcon already indicates the state
+  const showValue = passed !== null || value !== '-';
+  return (
+    <div className="condition-row">
+      <span className="data-label">
+        {label}
+        {linkDisplay && linkUrl ? (
+          <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="link">{linkDisplay}</a>
+        ) : null}
+        {labelAfter}
+      </span>
+      <span className="condition-row__right">
+        <StatusIcon value={passed} />
+        {showValue && <span className="data-value">{value}</span>}
+      </span>
+    </div>
+  );
+}
+
 export function GateConditions({ gateAddress, chainId, userAddress, label, onFollow }: Props) {
   const [rows, setRows] = useState<Row[]>(LOADING_ROWS);
   const [followInfo, setFollowInfo] = useState<{ addr: `0x${string}`; name: string } | null>(null);
@@ -297,11 +319,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
         <div className="conditions-group">
-          <div className="data-row" style={{ border: 'none' }}>
-            <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>No restrictions</span>
-            <StatusIcon value={null} />
-            <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
-          </div>
+          <ConditionRow label="No restrictions" passed={null} value="-" />
         </div>
       </div>
     );
@@ -313,11 +331,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
         <span className="conditions-group-header">{label}</span>
         <div className="conditions-group">
           {LOADING_ROWS.map((r, i) => (
-            <div key={i} className="data-row" style={{ border: 'none' }}>
-              <span className="data-label" style={{ color: 'var(--c-text-tertiary)' }}>{r.label}</span>
-              <StatusIcon value={null} />
-              <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
-            </div>
+            <ConditionRow key={i} {...r} />
           ))}
         </div>
       </div>
@@ -329,11 +343,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
         <div className="conditions-group">
-          <div className="data-row" style={{ border: 'none' }}>
-            <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>No conditions set</span>
-            <StatusIcon value={null} />
-            <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
-          </div>
+          <ConditionRow label="No conditions set" passed={null} value="-" />
         </div>
       </div>
     );
@@ -345,30 +355,20 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <div className="conditions-group">
         {rows.map((r, i) => (
           <div key={i}>
-            <div className="data-row" style={{ border: 'none' }}>
-              <span className="data-label">
-                {r.label}
-                {r.linkDisplay && r.linkUrl ? (
-                  <a href={r.linkUrl} target="_blank" rel="noopener noreferrer" className="link">{r.linkDisplay}</a>
-                ) : null}
-                {r.labelAfter}
-              </span>
-              {followInfo && i === 0 && r.passed === false && onFollow ? (
-                <div className="follow-icon-stack">
-                  <StatusIcon value={r.passed} />
-                  <button
-                    onClick={handleFollow}
-                    disabled={followPending}
-                    className="btn btn-primary btn-sm"
-                    style={{ fontSize: 12, padding: '2px 10px' }}
-                  >
-                    {followPending ? 'Following…' : 'Follow'}
-                  </button>
-                </div>
-              ) : (
-                <StatusIcon value={r.passed} />
-              )}
-            </div>
+            <ConditionRow {...r} />
+            {/* Follow button: outside data-row so icon position stays aligned */}
+            {followInfo && i === 0 && r.passed === false && onFollow && (
+              <div className="follow-trigger-row">
+                <button
+                  onClick={handleFollow}
+                  disabled={followPending}
+                  className="btn btn-primary btn-sm"
+                  style={{ fontSize: 12, padding: '2px 10px' }}
+                >
+                  {followPending ? 'Following…' : 'Follow'}
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -309,15 +309,13 @@ body {
      Both use fixed min-height so card size never changes.
   */
 
-.card-section--center.card-block--xl {
-  display: flex;
-  flex-direction: column;
+/* ─── Card section fixed-height blocks ─── */
+
+.card-block--xl {
   min-height: 260px;
 }
 
-/* .card-section--center.card-block--xl > :last-child — removed, conditions-area has its own flex: 1 */
-
-.card-section--center.card-block--action {
+.card-block--action {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
@@ -386,14 +384,26 @@ body {
   margin: 0;
 }
 
-/* ─── Follow icon stack (icon + button stacked vertically) ─── */
+/* ─── Revokable token warning ─── */
 
-.follow-icon-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3xs);
+.revoke-warning {
+  margin: 4px 0 0;
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--c-error, #ef4444) 8%, transparent);
+  border-radius: var(--radius-sm, 5px);
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--c-error, #ef4444);
   flex-shrink: 0;
+}
+
+/* ─── Follow trigger (outside data-row for SVG alignment) ─── */
+
+.follow-trigger-row {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 18px;
+  margin-top: var(--space-3xs);
 }
 
 /* ─── Action bar (inside card-block--action) ─── */
@@ -405,6 +415,8 @@ body {
   gap: var(--space-sm);
   flex-wrap: wrap;
 }
+
+
 
 .action-status {
   margin: 0;
@@ -599,6 +611,29 @@ body {
 
 .data-value.link {
   color: var(--c-accent);
+}
+
+/* ─── Condition row: 2-column variant for gate conditions (label | icon + value) ─── */
+
+.condition-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-xs);
+  align-items: center;
+  padding: var(--space-2xs) 0;
+}
+
+.condition-row .data-value {
+  grid-column: unset;
+}
+
+/* ─── Condition row right side: icon + value horizontal pair ─── */
+
+.condition-row__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  white-space: nowrap;
 }
 
 /* ─── TX Hash display (deprecated — use TxIndicator) ─── */

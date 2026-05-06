@@ -1,7 +1,6 @@
 'use client';
 
 import { ethers } from 'ethers';
-import { useUpProvider } from '@/lib/up-provider';
 import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
 import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
@@ -11,20 +10,16 @@ import { useTxContext } from '@/lib/tx-context';
 interface Props {
   token: TokenConfig;
   status: TokenStatus;
-  chain: { name: string; explorer: string };
   onRefetch: () => void;
   displayAddress?: `0x${string}` | null;
-  walletAddress?: `0x${string}` | null;
 }
 
-export function ActionCard({ token, status, chain, onRefetch, displayAddress, walletAddress }: Props) {
-  const { accounts } = useUpProvider();
-  const connectedWallet = accounts[0] || null;
-  const mintTarget = displayAddress || connectedWallet;
+export function ActionCard({ token, status, onRefetch, displayAddress }: Props) {
   const { sendTx } = useTxContext();
 
-  const { mint, isPending: mintPending } = useMint(token, mintTarget, onRefetch);
-  const { burn, isPending: burnPending } = useBurn(token, connectedWallet, onRefetch);
+  const addr = displayAddress ?? null;
+  const { mint, isPending: mintPending } = useMint(token, addr, onRefetch);
+  const { burn, isPending: burnPending } = useBurn(token, addr, onRefetch);
 
   // ─── Derived state ───
   const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
@@ -35,9 +30,9 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
   const balCap = status.balanceCap > 0n ? Number(status.balanceCap) : null;
   const isSoldOut = status.supplyCap > 0n && status.totalSupply >= status.supplyCap;
 
-  // ─── Mint button (always in DOM, disabled states controlled) ───
-  const mintDisabled = !connectedWallet || mintPending || !status.canMint;
-  const mintLabel = !connectedWallet
+  // ─── Mint button ───
+  const mintDisabled = !displayAddress || mintPending || !status.canMint;
+  const mintLabel = !displayAddress
     ? 'Mint NFT'
     : mintPending
       ? 'Minting...'
@@ -52,8 +47,8 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
               : 'Mint NFT';
 
   // ─── Burn button ───
-  const burnDisabled = !connectedWallet || !hasTokens || burnPending;
-  const burnLabel = !connectedWallet
+  const burnDisabled = !displayAddress || !hasTokens || burnPending;
+  const burnLabel = !displayAddress
     ? 'Burn'
     : burnPending
       ? 'Burning...'
@@ -61,15 +56,15 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
         ? 'Burn'
         : 'Burn 1';
 
-  // ─── Status line text (always present) ───
-  const statusLine = !connectedWallet
+  // ─── Status line ───
+  const statusLine = !displayAddress
     ? 'Connect to interact'
     : `Connected · You hold ${userBal}${balCap ? ` / ${balCap}` : ''}`;
 
   return (
     <div className="card anim anim-d3">
       {/* ═══════════════════════════════════════════════════════
-           Eligibility — mint + hold conditions, fixed 200px
+           Eligibility — mint + hold conditions in 2-col layout
            ═══════════════════════════════════════════════════════ */}
       <div className="card-section card-section--center card-block--xl">
         <span className="section-label"><EmojiText>🦄 Eligibility 🦄</EmojiText></span>
@@ -78,7 +73,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           <GateConditions
             gateAddress={status.mintGate}
             chainId={token.chainId}
-            userAddress={displayAddress || connectedWallet}
+            userAddress={addr}
             label="Mint"
             onFollow={async (target: `0x${string}`) => {
               const iface = new ethers.Interface(['function follow(address addr) external']);
@@ -89,7 +84,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           <GateConditions
             gateAddress={status.holdGate}
             chainId={token.chainId}
-            userAddress={displayAddress || connectedWallet}
+            userAddress={addr}
             label="Hold"
             onFollow={async (target: `0x${string}`) => {
               const iface = new ethers.Interface(['function follow(address addr) external']);
@@ -99,21 +94,14 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           />
         </div>
         {hasHoldGate && status.revokable && (
-          <p style={{
-            margin: '4px 0 0', padding: '3px 8px',
-            background: 'color-mix(in srgb, var(--c-error, #ef4444) 8%, transparent)',
-            borderRadius: 'var(--radius-sm, 5px)',
-            fontSize: 10, lineHeight: 1.3,
-            color: 'var(--c-error, #ef4444)',
-            flexShrink: 0,
-          }}>
+          <p className="revoke-warning">
             {'\u26A0\uFE0F'} Revokable Token — Owner can revoke if hold conditions unmet
           </p>
         )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-           Actions — mint + burn buttons, fixed 80px
+           Actions — mint + burn buttons
            ═══════════════════════════════════════════════════════ */}
       <div className="card-section card-section--center card-block--action">
         <span className="section-label"><EmojiText>🐰 Claim&Action 🐰</EmojiText></span>

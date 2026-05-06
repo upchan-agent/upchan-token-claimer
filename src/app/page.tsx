@@ -80,10 +80,8 @@ export default function HomePage() {
           <ActionCard
             token={displayToken}
             status={st}
-            chain={chain}
             onRefetch={refresh}
             displayAddress={vm.displayAddress}
-            walletAddress={vm.walletAddress}
           />
 
           {/* Holders */}

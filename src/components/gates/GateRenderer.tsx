@@ -243,14 +243,16 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
         </div>
       ))}
       {followTarget && onFollow && userAddress && conditions.find(c => c.label === `Follow ${followTarget.name}`)?.passed === false && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={handleFollow}
-            disabled={isFollowPending}
-          >
-            {isFollowPending ? 'Following…' : 'Follow'}
-          </button>
+        <div className="data-row" style={{ border: 'none' }}>
+          <span className="data-value">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleFollow}
+              disabled={isFollowPending}
+            >
+              {isFollowPending ? 'Following…' : 'Follow'}
+            </button>
+          </span>
         </div>
       )}
     </div>

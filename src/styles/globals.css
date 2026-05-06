@@ -625,7 +625,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: var(--space-3xs);
-  min-width: 80px;
+  min-width: 76px;
   min-height: 40px;
 }
 

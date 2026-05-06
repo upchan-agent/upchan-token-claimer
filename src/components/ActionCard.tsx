@@ -107,7 +107,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
             color: 'var(--c-error, #ef4444)',
             flexShrink: 0,
           }}>
-            {'\u26A0\uFE0F'} Revokable Token — Owner may revoke if hold conditions unmet
+            {'\u26A0\uFE0F'} Revokable Token — Owner can revoke if hold conditions unmet
           </p>
         )}
       </div>

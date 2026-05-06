@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { CHAINS, GATE_ABI } from '@/config/tokens';
+import { CHAINS, GATE_ABI, assetUrl, profileUrl } from '@/config/tokens';
 import { fetchProfileMeta } from '@/lib/useProfileMetadata';
 import { YesIcon, NoIcon, DashIcon } from '@/components/Icons';
 
@@ -30,6 +30,33 @@ interface Row {
   label: string;
   passed: boolean | null;
   value: string;
+  href?: string;
+}
+
+/** Fetch token name from Envio Asset table. */
+async function fetchAssetName(address: string, chainId: number): Promise<string | null> {
+  const ENVIO_URLS: Record<number, string> = {
+    42: 'https://envio.lukso-mainnet.universal.tech/v1/graphql',
+    4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
+  };
+  const url = ENVIO_URLS[chainId];
+  if (!url) return null;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `{Asset(where:{id:{_eq:"${address.toLowerCase()}"}}){lsp4TokenName}}`,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const name = json?.data?.Asset?.[0]?.lsp4TokenName;
+    return name || null;
+  } catch {
+    return null;
+  }
 }
 
 /** Build 4 base rows from gate config, evaluated against userAddress (or null → no eval). */
@@ -93,7 +120,7 @@ async function buildRows(
     }
     followInfo = { addr: followAddr as `0x${string}`, name };
     isFollowing = fOk;
-    rows.push({ label: `Follow ${name}`, passed: noUser ? null : fOk, value: noUser ? '-' : (fOk ? 'Following' : 'Not following') });
+    rows.push({ label: `Follow ${name}`, passed: noUser ? null : fOk, value: noUser ? '-' : (fOk ? 'Following' : 'Not following'), href: profileUrl(followAddr) });
   } else {
     rows.push({ label: 'Follow', passed: null, value: '-' });
   }
@@ -135,10 +162,13 @@ async function buildRows(
 
   // ─── Token Requirements ───
   if (reqs.length > 0) {
-    for (const r of reqs) {
-      const shortAddr = r.token.slice(0, 6) + '…' + r.token.slice(-4);
+    // Batch-fetch token names from Envio
+    const tokenNames = await Promise.all(reqs.map(r => fetchAssetName(r.token, chainId)));
+    for (let i = 0; i < reqs.length; i++) {
+      const r = reqs[i];
+      const tokenLabel = tokenNames[i] || r.token.slice(0, 6) + '…' + r.token.slice(-4);
       if (noUser) {
-        rows.push({ label: `${shortAddr} \u2265 ${r.minAmount}`, passed: null, value: '-' });
+        rows.push({ label: `Token: ${tokenLabel}`, passed: null, value: '-', href: assetUrl(r.token, chainId) });
       } else {
         let bal = BigInt(0);
         try {
@@ -148,7 +178,7 @@ async function buildRows(
           bal = iface.decodeFunctionResult('balanceOf', res)[0] as bigint;
         } catch {}
         const ok = bal >= r.minAmount;
-        rows.push({ label: `${shortAddr} \u2265 ${r.minAmount}`, passed: ok, value: ok ? 'Held' : `Need ${r.minAmount}` });
+        rows.push({ label: `Token: ${tokenLabel}`, passed: ok, value: ok ? 'Held' : `Need ${r.minAmount}`, href: assetUrl(r.token, chainId) });
       }
     }
   }
@@ -271,7 +301,15 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <div className="conditions-group">
         {rows.map((r, i) => (
           <div key={i} className="data-row" style={{ border: 'none' }}>
-            <span className="data-label">{r.label}</span>
+            <span className="data-label">
+              {r.href ? (
+                <a href={r.href} target="_blank" rel="noopener noreferrer" className="link">
+                  {r.label}
+                </a>
+              ) : (
+                r.label
+              )}
+            </span>
             <StatusIcon value={r.passed} />
             <span className="data-value">
               {followInfo && i === 0 && r.passed === false && onFollow ? (

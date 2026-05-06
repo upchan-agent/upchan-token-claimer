@@ -38,20 +38,22 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
   const isSoldOut = status.supplyCap > 0n && status.totalSupply >= status.supplyCap;
 
   // ─── Mint button (always in DOM, disabled states controlled) ───
-  const mintDisabled = !connectedWallet || isAtMaxBalance || status.mintingDisabled || isSoldOut || !status.isMintable || mintPending;
+  const mintDisabled = !connectedWallet || mintPending || !status.canMint;
   const mintLabel = !connectedWallet
     ? 'Mint NFT'
     : mintPending
       ? 'Minting...'
-      : isAtMaxBalance
-        ? 'Max Reached'
-        : status.mintingDisabled
-          ? 'Minting Closed'
+      : status.mintingDisabled
+        ? 'Minting Closed'
+        : isAtMaxBalance
+          ? 'Max Reached'
           : isSoldOut
             ? 'Sold Out'
             : !status.isMintable
               ? 'Paused'
-              : 'Mint NFT';
+              : status.canMint
+                ? 'Mint NFT'
+                : 'Locked';
 
   // ─── Burn button ───
   const burnDisabled = !connectedWallet || !hasTokens || burnPending;

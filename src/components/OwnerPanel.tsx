@@ -140,7 +140,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
         <Section label="Mint Control" open={openSection === 'mint'} onToggle={() => handleToggle('mint')}>
           <div className="data-row">
             <span className="data-label">Status</span>
-            <span className={'status-pill ' + statusPill}>{statusLabel}</span>
+            <span className="data-value"><span className={'status-pill ' + statusPill}>{statusLabel}</span></span>
           </div>
           {!status.mintingDisabled && (
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -327,24 +327,28 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
             <>
               <div className="data-row">
                 <span className="data-label">Target</span>
-                <input
-                  value={revokeAddr}
-                  onChange={e => setRevokeAddr(e.target.value)}
-                  placeholder="0x..."
-                  className="owner-input"
-                  style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
-                />
+                <span className="data-value" style={{ justifyContent: 'flex-start' }}>
+                  <input
+                    value={revokeAddr}
+                    onChange={e => setRevokeAddr(e.target.value)}
+                    placeholder="0x..."
+                    className="owner-input"
+                    style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+                  />
+                </span>
               </div>
               <div className="data-row">
                 <span className="data-label">Amount</span>
-                <input
-                  type="number"
-                  value={revokeAmount}
-                  onChange={e => setRevokeAmount(e.target.value)}
-                  min={1}
-                  className="owner-input"
-                  style={{ width: 70 }}
-                />
+                <span className="data-value" style={{ justifyContent: 'flex-start' }}>
+                  <input
+                    type="number"
+                    value={revokeAmount}
+                    onChange={e => setRevokeAmount(e.target.value)}
+                    min={1}
+                    className="owner-input"
+                    style={{ width: 70 }}
+                  />
+                </span>
               </div>
               {hasHoldGate && (
                 <button
@@ -380,19 +384,21 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
           <div className="data-row" style={{ border: 'none' }}>
             <span className="data-label">Soulbound</span>
             {status.isSoulbound ? (
-              <button
-                onClick={async () => {
-                  if (window.confirm('Make transferable permanently?')) {
-                    await actions.makeTransferable();
-                    onDone();
-                  }
-                }}
-                disabled={actions.isPending}
-                className="btn btn-secondary btn-sm"
-                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
-              >
-                Make Transferable
-              </button>
+              <span className="data-value">
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Make transferable permanently?')) {
+                      await actions.makeTransferable();
+                      onDone();
+                    }
+                  }}
+                  disabled={actions.isPending}
+                  className="btn btn-secondary btn-sm"
+                  style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+                >
+                  Make Transferable
+                </button>
+              </span>
             ) : (
               <span className="data-value text-caption" style={{ color: 'var(--c-text-tertiary)' }}>Already transferable</span>
             )}
@@ -401,21 +407,23 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
           {/* Renounce Ownership */}
           <div className="data-row" style={{ border: 'none', marginTop: 8 }}>
             <span className="data-label">Ownership</span>
-            <button
-              onClick={async () => {
-                if (window.confirm('Are you sure? This permanently renounces ownership.\n\nAfter this:\n- Gate and supply cap settings become permanent\n- Minting can never be re-enabled if disabled\n- No one can ever modify this token again')) {
-                  if (window.confirm('FINAL WARNING: This action CANNOT be undone. Renounce ownership?')) {
-                    await actions.renounceOwnership();
-                    onDone();
+            <span className="data-value">
+              <button
+                onClick={async () => {
+                  if (window.confirm('Are you sure? This permanently renounces ownership.\n\nAfter this:\n- Gate and supply cap settings become permanent\n- Minting can never be re-enabled if disabled\n- No one can ever modify this token again')) {
+                    if (window.confirm('FINAL WARNING: This action CANNOT be undone. Renounce ownership?')) {
+                      await actions.renounceOwnership();
+                      onDone();
+                    }
                   }
-                }
-              }}
-              disabled={actions.isPending}
-              className="btn btn-secondary btn-sm"
-              style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
-            >
-              Renounce Ownership
-            </button>
+                }}
+                disabled={actions.isPending}
+                className="btn btn-secondary btn-sm"
+                style={{ color: 'var(--c-error)', borderColor: 'var(--c-error)' }}
+              >
+                Renounce Ownership
+              </button>
+            </span>
           </div>
         </Section>
 

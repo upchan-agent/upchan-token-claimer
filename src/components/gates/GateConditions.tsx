@@ -37,9 +37,9 @@ async function buildRows(
   gateAddress: string,
   chainId: number,
   userAddress: string | null,
-): Promise<{ rows: Row[]; followInfo: { addr: `0x${string}`; name: string } | null; isFollowing: boolean }> {
+): Promise<{ rows: Row[]; followInfo: { addr: `0x${string}`; name: string } | null; isFollowing: boolean; hasConfig: boolean }> {
   const chain = CHAINS[chainId];
-  if (!chain) return { rows: defaultRows(), followInfo: null, isFollowing: false };
+  if (!chain) return { rows: defaultRows(), followInfo: null, isFollowing: false, hasConfig: false };
 
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const gate = new ethers.Contract(gateAddress, GATE_ABI, p);
@@ -47,9 +47,9 @@ async function buildRows(
   const noUser = !userAddress;
 
   if (gt !== 'requirements') {
-    if (noUser) return { rows: defaultRows(), followInfo: null, isFollowing: false };
+    if (noUser) return { rows: defaultRows(), followInfo: null, isFollowing: false, hasConfig: false };
     const [, checkLabel, progress] = await gate.check(userAddress);
-    return { rows: [{ label: checkLabel, passed: false, value: progress }], followInfo: null, isFollowing: false };
+    return { rows: [{ label: checkLabel, passed: false, value: progress }], followInfo: null, isFollowing: false, hasConfig: true };
   }
 
   const REQ_ABI = [
@@ -65,6 +65,11 @@ async function buildRows(
     rg.minFollowers().catch(() => BigInt(0)),
     rg.getTokenRequirements().catch(() => []),
   ]);
+
+  const minBalNum = minBal as bigint;
+  const minFolNum = minFol as bigint;
+  const reqs = tokens as { token: string; minAmount: bigint }[];
+  const hasConfigData = followAddr !== ZERO || minBalNum > 0n || minFolNum > 0n || reqs.length > 0;
 
   const rows: Row[] = [];
   let followInfo: { addr: `0x${string}`; name: string } | null = null;
@@ -94,7 +99,6 @@ async function buildRows(
   }
 
   // ─── LYX Balance ───
-  const minBalNum = minBal as bigint;
   if (minBalNum > 0n) {
     const lyxStr = ethers.formatEther(minBalNum).slice(0, 6);
     if (noUser) {
@@ -112,7 +116,6 @@ async function buildRows(
   }
 
   // ─── Followers ───
-  const minFolNum = minFol as bigint;
   if (minFolNum > 0n) {
     if (noUser) {
       rows.push({ label: `\u2265 ${minFolNum} followers`, passed: null, value: '-' });
@@ -131,7 +134,6 @@ async function buildRows(
   }
 
   // ─── Token Requirements ───
-  const reqs = tokens as { token: string; minAmount: bigint }[];
   if (reqs.length > 0) {
     for (const r of reqs) {
       const shortAddr = r.token.slice(0, 6) + '…' + r.token.slice(-4);
@@ -151,7 +153,7 @@ async function buildRows(
     }
   }
 
-  return { rows, followInfo, isFollowing };
+  return { rows, followInfo, isFollowing, hasConfig: hasConfigData };
 }
 
 function defaultRows(): Row[] {
@@ -174,11 +176,12 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
   const [rows, setRows] = useState<Row[]>(LOADING_ROWS);
   const [followInfo, setFollowInfo] = useState<{ addr: `0x${string}`; name: string } | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [hasConfig, setHasConfig] = useState(false);
   const [loading, setLoading] = useState(true);
   const [followPending, setFollowPending] = useState(false);
 
   const noGate = gateAddress === ZERO;
-  const isEmpty = !noGate && !loading && rows.every(r => r.passed === null); // gate set but no conditions
+  const isEmpty = !noGate && !loading && !hasConfig;
 
   useEffect(() => {
     if (noGate) { setLoading(false); setRows(defaultRows()); return; }
@@ -195,9 +198,10 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
         setRows(result.rows);
         setFollowInfo(result.followInfo);
         setIsFollowing(result.isFollowing);
+        setHasConfig(result.hasConfig);
         setLoading(false);
       } catch {
-        if (!cancelled) { setLoading(false); setRows(defaultRows()); }
+        if (!cancelled) { setLoading(false); setRows(defaultRows()); setHasConfig(false); }
       }
     })();
 

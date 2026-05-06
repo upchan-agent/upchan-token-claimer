@@ -269,8 +269,7 @@ function ConditionRow({ label, passed, linkDisplay, linkUrl, labelAfter, inactiv
           <button
             onClick={onFollow}
             disabled={followPending}
-            className="btn btn-primary btn-sm"
-            style={{ fontSize: 12, padding: '2px 10px' }}
+            className="btn btn-primary btn-follow"
           >
             {followPending ? 'Following…' : 'Follow'}
           </button>

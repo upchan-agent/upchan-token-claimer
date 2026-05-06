@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { CHAINS, GATE_ABI, assetUrl, profileUrl } from '@/config/tokens';
-import { fetchProfileMeta } from '@/lib/useProfileMetadata';
 import { YesIcon, NoIcon, DashIcon } from '@/components/Icons';
 
 interface Props {
@@ -33,6 +32,32 @@ interface Row {
   linkDisplay?: string;       // Clickable name text, e.g. "🆙chan" or "LYS"
   linkUrl?: string;           // URL for the name link
   labelAfter?: string;        // Text after the link, e.g. " ≥ 1"
+}
+
+/** Fetch profile name from Envio Profile table. */
+async function fetchProfileName(address: string, chainId: number): Promise<string | null> {
+  const ENVIO_URLS: Record<number, string> = {
+    42: 'https://envio.lukso-mainnet.universal.tech/v1/graphql',
+    4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
+  };
+  const url = ENVIO_URLS[chainId];
+  if (!url) return null;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `{Profile(where:{id:{_eq:"${address.toLowerCase()}"}}){name}}`,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const n = json?.data?.Profile?.[0]?.name;
+    return n || null;
+  } catch {
+    return null;
+  }
 }
 
 /** Fetch token symbol from Envio Asset table. */
@@ -110,8 +135,8 @@ async function buildRows(
     let fOk = false;
     if (!noUser) {
       try {
-        const m = await fetchProfileMeta(followAddr, chainId);
-        if (m?.name) name = m.name;
+        const pn = await fetchProfileName(followAddr, chainId);
+        if (pn) name = pn;
       } catch {}
       try {
         const iface = new ethers.Interface(['function isFollowing(address,address) view returns (bool)']);
@@ -319,29 +344,36 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
       <span className="conditions-group-header">{label}</span>
       <div className="conditions-group">
         {rows.map((r, i) => (
-          <div key={i} className="data-row" style={{ border: 'none' }}>
-            <span className="data-label">
-              {r.label}
-              {r.linkDisplay && r.linkUrl ? (
-                <a href={r.linkUrl} target="_blank" rel="noopener noreferrer" className="link">{r.linkDisplay}</a>
-              ) : null}
-              {r.labelAfter}
-            </span>
-            <StatusIcon value={r.passed} />
-            <span className="data-value">
-              {followInfo && i === 0 && r.passed === false && onFollow ? (
-                <button
-                  onClick={handleFollow}
-                  disabled={followPending}
-                  className="btn btn-primary btn-sm"
-                  style={{ fontSize: 12, padding: '2px 10px' }}
-                >
-                  {followPending ? 'Following…' : 'Follow'}
-                </button>
-              ) : (
-                r.value
-              )}
-            </span>
+          <div key={i}>
+            <div className="data-row" style={{ border: 'none' }}>
+              <span className="data-label">
+                {r.label}
+                {r.linkDisplay && r.linkUrl ? (
+                  <a href={r.linkUrl} target="_blank" rel="noopener noreferrer" className="link">{r.linkDisplay}</a>
+                ) : null}
+                {r.labelAfter}
+              </span>
+              <StatusIcon value={r.passed} />
+              <span className="data-value">
+                {followInfo && i === 0 && r.passed === false && onFollow ? '' : r.value}
+              </span>
+            </div>
+            {followInfo && i === 0 && r.passed === false && onFollow && (
+              <div className="data-row" style={{ border: 'none' }}>
+                <span className="data-label" />
+                <span />
+                <span className="data-value">
+                  <button
+                    onClick={handleFollow}
+                    disabled={followPending}
+                    className="btn btn-primary btn-sm"
+                    style={{ fontSize: 12, padding: '2px 10px' }}
+                  >
+                    {followPending ? 'Following…' : 'Follow'}
+                  </button>
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>

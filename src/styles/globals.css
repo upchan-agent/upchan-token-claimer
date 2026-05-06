@@ -625,6 +625,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   gap: var(--space-3xs);
+  min-width: 80px;
   min-height: 40px;
 }
 

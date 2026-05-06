@@ -625,7 +625,7 @@ body {
   grid-template-columns: 1fr 56px;
   gap: var(--space-xs);
   align-items: center;
-  padding: var(--space-2xs) 0;
+  padding: var(--space-3xs) 0;
 }
 
 /* ─── Condition row right side: icon + optional follow button below ─── */

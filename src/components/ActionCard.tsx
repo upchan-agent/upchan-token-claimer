@@ -50,7 +50,7 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
           : isSoldOut
             ? 'Sold Out'
             : !status.isMintable
-              ? 'Not Available'
+              ? 'Paused'
               : 'Mint NFT';
 
   // ─── Burn button ───
@@ -92,6 +92,8 @@ export function ActionCard({ token, status, chain, onRefetch, displayAddress, wa
                 <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
                   No mint restrictions
                 </span>
+                <span className="status-icon--none"><DashIcon size={14} /></span>
+                <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
               </div>
             )}
           </div>

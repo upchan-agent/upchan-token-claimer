@@ -194,17 +194,20 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [followTarget, setFollowTarget] = useState<{ addr: `0x${string}`; name: string } | null>(null);
   const [isFollowPending, setIsFollowPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasGate) { setConditions([]); return; }
+    if (!hasGate) { setConditions([]); setIsLoading(false); return; }
     let cancelled = false;
     setFollowTarget(null);
+    setIsLoading(true);
 
     (async () => {
       const { conditions: conds, followTarget: ft } = await fetchConditions(status.mintGate, token.chainId, userAddress || null);
       if (cancelled) return;
       setConditions(conds);
       if (ft) setFollowTarget(ft);
+      setIsLoading(false);
     })();
 
     return () => { cancelled = true; };
@@ -221,6 +224,13 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
   };
 
   if (!hasGate) return null;
+  if (isLoading) {
+    return (
+      <div className="data-row" style={{ border: 'none' }}>
+        <span className="data-label text-caption" style={{ color: 'var(--c-text-tertiary)' }}>Loading conditions...</span>
+      </div>
+    );
+  }
   if (conditions.length === 0) return null;
 
   return (
@@ -233,18 +243,14 @@ export function GateRenderer({ token, status, onRefetch, userAddress, onFollow }
         </div>
       ))}
       {followTarget && onFollow && userAddress && conditions.find(c => c.label === `Follow ${followTarget.name}`)?.passed === false && (
-        <div className="data-row" style={{ border: 'none' }}>
-          <span />
-          <span />
-          <span className="data-value">
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleFollow}
-              disabled={isFollowPending}
-            >
-              {isFollowPending ? 'Following…' : 'Follow'}
-            </button>
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleFollow}
+            disabled={isFollowPending}
+          >
+            {isFollowPending ? 'Following…' : 'Follow'}
+          </button>
         </div>
       )}
     </div>

@@ -38,11 +38,13 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
   const [conditions, setConditions] = useState<ConditionRow[]>([]);
   const [followTarget, setFollowTarget] = useState<{ addr: `0x${string}`; name: string } | null>(null);
   const [isFollowPending, setIsFollowPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!userAddress) return;
     let cancelled = false;
     setFollowTarget(null);
+    setIsLoading(true);
 
     (async () => {
       try {
@@ -98,7 +100,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
             const ok = bal >= minBalNum;
             rows.push({
               passed: ok,
-              label: `≥ ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
+              label: `\u2265 ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
               progress: ok ? `${ethers.formatEther(bal).slice(0, 6)} LYX` : `Need ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
             });
           }
@@ -113,7 +115,7 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
               folCount = iface.decodeFunctionResult('totalFollowersOf', r)[0] as bigint;
             } catch {}
             const ok = folCount >= minFolNum;
-            rows.push({ passed: ok, label: `≥ ${minFolNum} followers`, progress: `${folCount} / ${minFolNum}` });
+            rows.push({ passed: ok, label: `\u2265 ${minFolNum} followers`, progress: `${folCount} / ${minFolNum}` });
           }
 
           const reqs = tokenReqs as { token: string; minAmount: bigint }[];
@@ -126,19 +128,24 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
               bal = iface.decodeFunctionResult('balanceOf', res)[0] as bigint;
             } catch {}
             const ok = bal >= r.minAmount;
-            rows.push({ passed: ok, label: `Token ≥ ${r.minAmount}`, progress: ok ? 'Held' : `Need ${r.minAmount}` });
+            rows.push({ passed: ok, label: `Token \u2265 ${r.minAmount}`, progress: ok ? 'Held' : `Need ${r.minAmount}` });
           }
 
           if (cancelled) return;
           setConditions(rows);
+          if (!cancelled) setIsLoading(false);
           return;
         }
 
         const [, label, progress] = await gate.check(userAddress);
         if (cancelled) return;
         setConditions([{ passed: false, label: label || gt, progress }]);
+        if (!cancelled) setIsLoading(false);
       } catch {
-        if (!cancelled) setConditions([]);
+        if (!cancelled) {
+          setConditions([]);
+          setIsLoading(false);
+        }
       }
     })();
 
@@ -155,6 +162,14 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="data-row" style={{ border: 'none' }}>
+        <span className="data-label text-caption" style={{ color: 'var(--c-text-tertiary)' }}>Loading conditions...</span>
+      </div>
+    );
+  }
+
   if (conditions.length === 0) return null;
 
   return (
@@ -167,18 +182,14 @@ export function HoldGateInfo({ gateAddress, chainId, userAddress, isRevokable, o
         </div>
       ))}
       {followTarget && onFollow && conditions.find(c => c.label === `Follow ${followTarget.name}`)?.passed === false && (
-        <div className="data-row" style={{ border: 'none' }}>
-          <span />
-          <span />
-          <span className="data-value">
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleFollow}
-              disabled={isFollowPending}
-            >
-              {isFollowPending ? 'Following…' : 'Follow'}
-            </button>
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleFollow}
+            disabled={isFollowPending}
+          >
+            {isFollowPending ? 'Following…' : 'Follow'}
+          </button>
         </div>
       )}
       {isRevokable && (

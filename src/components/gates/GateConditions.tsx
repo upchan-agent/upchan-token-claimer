@@ -31,6 +31,7 @@ interface Row {
   linkDisplay?: string;
   linkUrl?: string;
   labelAfter?: string;
+  inactive?: boolean; // true = condition not configured, shown muted
 }
 
 /** Fetch profile name from Envio Profile table. */
@@ -156,7 +157,7 @@ async function buildRows(
       passed: noUser ? null : fOk,
     });
   } else {
-    rows.push({ label: 'Follow', passed: null });
+    rows.push({ label: 'Follow', passed: null, inactive: true });
   }
 
   // ─── LYX Balance ───
@@ -172,7 +173,7 @@ async function buildRows(
       });
     }
   } else {
-    rows.push({ label: '\u2265 0 LYX', passed: null });
+    rows.push({ label: '\u2265 0 LYX', passed: null, inactive: true });
   }
 
   // ─── Followers ───
@@ -190,7 +191,7 @@ async function buildRows(
       rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: count >= minFolNum });
     }
   } else {
-    rows.push({ label: '\u2265 0 Followers', passed: null });
+    rows.push({ label: '\u2265 0 Followers', passed: null, inactive: true });
   }
 
   // ─── Token Requirements ───
@@ -231,22 +232,22 @@ async function buildRows(
 
 function defaultRows(): Row[] {
   return [
-    { label: 'Follow', passed: null },
-    { label: '\u2265 0 LYX', passed: null },
-    { label: '\u2265 0 Followers', passed: null },
+    { label: 'Follow', passed: null, inactive: true },
+    { label: '\u2265 0 LYX', passed: null, inactive: true },
+    { label: '\u2265 0 Followers', passed: null, inactive: true },
   ];
 }
 
 const LOADING_ROWS: Row[] = [
-  { label: 'Follow', passed: null },
-  { label: '\u2265 0 LYX', passed: null },
-  { label: '\u2265 0 Followers', passed: null },
-  { label: 'Token', passed: null },
+  { label: 'Follow', passed: null, inactive: true },
+  { label: '\u2265 0 LYX', passed: null, inactive: true },
+  { label: '\u2265 0 Followers', passed: null, inactive: true },
+  { label: 'Token', passed: null, inactive: true },
 ];
 
 // ─── Condition row: 2-column (label | icon, follow button below icon) ───
 
-function ConditionRow({ label, passed, linkDisplay, linkUrl, labelAfter, followInfo, onFollow, followPending }: Row & {
+function ConditionRow({ label, passed, linkDisplay, linkUrl, labelAfter, inactive, followInfo, onFollow, followPending }: Row & {
   followInfo?: { addr: `0x${string}`; name: string } | null;
   onFollow?: () => Promise<void>;
   followPending?: boolean;
@@ -255,7 +256,7 @@ function ConditionRow({ label, passed, linkDisplay, linkUrl, labelAfter, followI
 
   return (
     <div className="condition-row">
-      <span className="data-label">
+      <span className={`data-label${inactive ? ' data-label--muted' : ''}`}>
         {label}
         {linkDisplay && linkUrl ? (
           <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="link">{linkDisplay}</a>

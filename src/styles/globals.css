@@ -620,7 +620,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3xs);
+  min-height: 40px;
+}
+
+/* ─── Muted label for inactive (unconfigured) conditions ─── */
+
+.data-label--muted {
+  color: var(--c-text-tertiary) !important;
 }
 
 /* ─── TX Hash display (deprecated — use TxIndicator) ─── */

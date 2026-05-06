@@ -27,14 +27,16 @@ function StatusIcon({ value }: { value: boolean | null }) {
 }
 
 interface Row {
-  label: string;
+  label: string;              // Static label prefix, e.g. "Follow " or "Token: "
   passed: boolean | null;
   value: string;
-  href?: string;
+  linkDisplay?: string;       // Clickable name text, e.g. "🆙chan" or "LYS"
+  linkUrl?: string;           // URL for the name link
+  labelAfter?: string;        // Text after the link, e.g. " ≥ 1"
 }
 
-/** Fetch token name from Envio Asset table. */
-async function fetchAssetName(address: string, chainId: number): Promise<string | null> {
+/** Fetch token symbol from Envio Asset table. */
+async function fetchAssetSymbol(address: string, chainId: number): Promise<string | null> {
   const ENVIO_URLS: Record<number, string> = {
     42: 'https://envio.lukso-mainnet.universal.tech/v1/graphql',
     4201: 'https://envio.lukso-testnet.universal.tech/v1/graphql',
@@ -46,20 +48,20 @@ async function fetchAssetName(address: string, chainId: number): Promise<string 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query: `{Asset(where:{id:{_eq:"${address.toLowerCase()}"}}){lsp4TokenName}}`,
+        query: `{Asset(where:{id:{_eq:"${address.toLowerCase()}"}}){lsp4TokenSymbol}}`,
       }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
     const json = await res.json();
-    const name = json?.data?.Asset?.[0]?.lsp4TokenName;
-    return name || null;
+    const sym = json?.data?.Asset?.[0]?.lsp4TokenSymbol;
+    return sym || null;
   } catch {
     return null;
   }
 }
 
-/** Build 4 base rows from gate config, evaluated against userAddress (or null → no eval). */
+/** Build rows from gate config, evaluated against userAddress (or null → no eval). */
 async function buildRows(
   gateAddress: string,
   chainId: number,
@@ -120,7 +122,14 @@ async function buildRows(
     }
     followInfo = { addr: followAddr as `0x${string}`, name };
     isFollowing = fOk;
-    rows.push({ label: `Follow ${name}`, passed: noUser ? null : fOk, value: noUser ? '-' : (fOk ? 'Following' : 'Not following'), href: profileUrl(followAddr) });
+    rows.push({
+      label: 'Follow ',
+      linkDisplay: name,
+      linkUrl: profileUrl(followAddr),
+      labelAfter: '',
+      passed: noUser ? null : fOk,
+      value: noUser ? '-' : (fOk ? 'Following' : 'Not following'),
+    });
   } else {
     rows.push({ label: 'Follow', passed: null, value: '-' });
   }
@@ -162,13 +171,19 @@ async function buildRows(
 
   // ─── Token Requirements ───
   if (reqs.length > 0) {
-    // Batch-fetch token names from Envio
-    const tokenNames = await Promise.all(reqs.map(r => fetchAssetName(r.token, chainId)));
+    const symbols = await Promise.all(reqs.map(r => fetchAssetSymbol(r.token, chainId)));
     for (let i = 0; i < reqs.length; i++) {
       const r = reqs[i];
-      const tokenLabel = tokenNames[i] || r.token.slice(0, 6) + '…' + r.token.slice(-4);
+      const sym = symbols[i] || r.token.slice(0, 6) + '…' + r.token.slice(-4);
       if (noUser) {
-        rows.push({ label: `Token: ${tokenLabel}`, passed: null, value: '-', href: assetUrl(r.token, chainId) });
+        rows.push({
+          label: 'Token: ',
+          linkDisplay: sym,
+          linkUrl: assetUrl(r.token, chainId),
+          labelAfter: ` \u2265 ${r.minAmount}`,
+          passed: null,
+          value: '-',
+        });
       } else {
         let bal = BigInt(0);
         try {
@@ -178,7 +193,14 @@ async function buildRows(
           bal = iface.decodeFunctionResult('balanceOf', res)[0] as bigint;
         } catch {}
         const ok = bal >= r.minAmount;
-        rows.push({ label: `Token: ${tokenLabel}`, passed: ok, value: ok ? 'Held' : `Need ${r.minAmount}`, href: assetUrl(r.token, chainId) });
+        rows.push({
+          label: 'Token: ',
+          linkDisplay: sym,
+          linkUrl: assetUrl(r.token, chainId),
+          labelAfter: ` \u2265 ${r.minAmount}`,
+          passed: ok,
+          value: ok ? 'Held' : `Need ${r.minAmount}`,
+        });
       }
     }
   }
@@ -194,11 +216,11 @@ function defaultRows(): Row[] {
   ];
 }
 
-/** 3 base rows — token rows only shown when configured */
 const LOADING_ROWS: Row[] = [
   { label: 'Follow', passed: null, value: '-' },
   { label: '\u2265 LYX', passed: null, value: '-' },
   { label: '\u2265 Followers', passed: null, value: '-' },
+  { label: 'Token:', passed: null, value: '-' },
 ];
 
 export function GateConditions({ gateAddress, chainId, userAddress, label, onFollow }: Props) {
@@ -245,7 +267,6 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
 
   // ═══ Render: priority order — noGate → loading → isEmpty → normal ═══
 
-  // No gate — immediate, no loading flash
   if (noGate) {
     return (
       <div className="conditions-block">
@@ -261,7 +282,6 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     );
   }
 
-  // Loading — 3 placeholder rows matching default row count
   if (loading) {
     return (
       <div className="conditions-block">
@@ -279,7 +299,6 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     );
   }
 
-  // Gate exists but no conditions configured
   if (isEmpty) {
     return (
       <div className="conditions-block">
@@ -302,13 +321,11 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
         {rows.map((r, i) => (
           <div key={i} className="data-row" style={{ border: 'none' }}>
             <span className="data-label">
-              {r.href ? (
-                <a href={r.href} target="_blank" rel="noopener noreferrer" className="link">
-                  {r.label}
-                </a>
-              ) : (
-                r.label
-              )}
+              {r.label}
+              {r.linkDisplay && r.linkUrl ? (
+                <a href={r.linkUrl} target="_blank" rel="noopener noreferrer" className="link">{r.linkDisplay}</a>
+              ) : null}
+              {r.labelAfter}
             </span>
             <StatusIcon value={r.passed} />
             <span className="data-value">

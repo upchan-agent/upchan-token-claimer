@@ -330,8 +330,9 @@ body {
 /* ─── Conditions area (inside card-block--xl) ─── */
 
 .conditions-area {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
   flex: 1;
   min-height: 0;
 }

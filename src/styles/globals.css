@@ -512,7 +512,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   padding: 2px 10px;
-  min-width: 76px;
+  min-width: 56px;
 }
 
 /* Icon button (small, transparent) */
@@ -619,7 +619,7 @@ body {
 
 .condition-row {
   display: grid;
-  grid-template-columns: 1fr 76px;
+  grid-template-columns: 1fr 56px;
   gap: var(--space-xs);
   align-items: center;
   padding: var(--space-2xs) 0;

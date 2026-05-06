@@ -164,12 +164,11 @@ function defaultRows(): Row[] {
   ];
 }
 
-/** Placeholder rows shown during loading — ensures stable height */
+/** 3 base rows — token rows only shown when configured */
 const LOADING_ROWS: Row[] = [
   { label: 'Follow', passed: null, value: '-' },
   { label: '\u2265 LYX', passed: null, value: '-' },
   { label: '\u2265 Followers', passed: null, value: '-' },
-  { label: 'Token', passed: null, value: '-' },
 ];
 
 export function GateConditions({ gateAddress, chainId, userAddress, label, onFollow }: Props) {
@@ -214,7 +213,25 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     try { await onFollow(followInfo.addr); } finally { setFollowPending(false); }
   }, [followInfo, onFollow]);
 
-  // Loading: always show 4 placeholder rows to reserve height
+  // ═══ Render: priority order — noGate → loading → isEmpty → normal ═══
+
+  // No gate — immediate, no loading flash
+  if (noGate) {
+    return (
+      <div className="conditions-block">
+        <span className="conditions-group-header">{label}</span>
+        <div className="conditions-group">
+          <div className="data-row" style={{ border: 'none' }}>
+            <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>No restrictions</span>
+            <StatusIcon value={null} />
+            <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading — 3 placeholder rows matching default row count
   if (loading) {
     return (
       <div className="conditions-block">
@@ -232,16 +249,14 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     );
   }
 
-  // No gate or empty gate
-  if (noGate || isEmpty) {
+  // Gate exists but no conditions configured
+  if (isEmpty) {
     return (
       <div className="conditions-block">
         <span className="conditions-group-header">{label}</span>
         <div className="conditions-group">
           <div className="data-row" style={{ border: 'none' }}>
-            <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>
-              {noGate ? 'No restrictions' : 'No conditions set'}
-            </span>
+            <span className="data-label" style={{ color: 'var(--c-text-secondary)' }}>No conditions set</span>
             <StatusIcon value={null} />
             <span className="data-value" style={{ color: 'var(--c-text-tertiary)' }}>-</span>
           </div>

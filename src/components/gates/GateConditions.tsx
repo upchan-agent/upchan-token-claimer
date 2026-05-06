@@ -173,13 +173,13 @@ async function buildRows(
       });
     }
   } else {
-    rows.push({ label: '\u2265 LYX', passed: null, value: '-' });
+    rows.push({ label: '\u2265 0 LYX', passed: null, value: '-' });
   }
 
   // ─── Followers ───
   if (minFolNum > 0n) {
     if (noUser) {
-      rows.push({ label: `\u2265 ${minFolNum} followers`, passed: null, value: '-' });
+      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: null, value: '-' });
     } else {
       let count = BigInt(0);
       try {
@@ -188,10 +188,10 @@ async function buildRows(
         const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
         count = iface.decodeFunctionResult('totalFollowersOf', r)[0] as bigint;
       } catch {}
-      rows.push({ label: `\u2265 ${minFolNum} followers`, passed: count >= minFolNum, value: `${count} / ${minFolNum}` });
+      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: count >= minFolNum, value: `${count} / ${minFolNum}` });
     }
   } else {
-    rows.push({ label: '\u2265 Followers', passed: null, value: '-' });
+    rows.push({ label: '\u2265 0 Followers', passed: null, value: '-' });
   }
 
   // ─── Token Requirements ───
@@ -202,10 +202,10 @@ async function buildRows(
       const sym = symbols[i] || r.token.slice(0, 6) + '…' + r.token.slice(-4);
       if (noUser) {
         rows.push({
-          label: 'Token: ',
+          label: `\u2265 ${r.minAmount} `,
           linkDisplay: sym,
           linkUrl: assetUrl(r.token, chainId),
-          labelAfter: ` \u2265 ${r.minAmount}`,
+          labelAfter: '',
           passed: null,
           value: '-',
         });
@@ -219,10 +219,10 @@ async function buildRows(
         } catch {}
         const ok = bal >= r.minAmount;
         rows.push({
-          label: 'Token: ',
+          label: `\u2265 ${r.minAmount} `,
           linkDisplay: sym,
           linkUrl: assetUrl(r.token, chainId),
-          labelAfter: ` \u2265 ${r.minAmount}`,
+          labelAfter: '',
           passed: ok,
           value: ok ? 'Held' : `Need ${r.minAmount}`,
         });
@@ -236,16 +236,16 @@ async function buildRows(
 function defaultRows(): Row[] {
   return [
     { label: 'Follow', passed: null, value: '-' },
-    { label: '\u2265 LYX', passed: null, value: '-' },
-    { label: '\u2265 Followers', passed: null, value: '-' },
+    { label: '\u2265 0 LYX', passed: null, value: '-' },
+    { label: '\u2265 0 Followers', passed: null, value: '-' },
   ];
 }
 
 const LOADING_ROWS: Row[] = [
   { label: 'Follow', passed: null, value: '-' },
-  { label: '\u2265 LYX', passed: null, value: '-' },
-  { label: '\u2265 Followers', passed: null, value: '-' },
-  { label: 'Token:', passed: null, value: '-' },
+  { label: '\u2265 0 LYX', passed: null, value: '-' },
+  { label: '\u2265 0 Followers', passed: null, value: '-' },
+  { label: 'Token', passed: null, value: '-' },
 ];
 
 // ─── Condition row: 2-column (label | icon + value) for gate conditions ───

@@ -150,11 +150,12 @@ async function fetchConditions(gateAddress: string, chainId: number, user: strin
 
       const minBalNum = minBal as bigint;
       if (minBalNum > BigInt(0)) {
-        const balOk = (await p.getBalance(checkUser)) >= minBalNum;
+        const userBalLyx = await p.getBalance(checkUser);
+        const balOk = userBalLyx >= minBalNum;
         parsed.push({
           passed: balOk,
           label: `≥ ${ethers.formatEther(minBalNum)} LYX`,
-          progress: balOk ? `${ethers.formatEther(minBalNum).slice(0, 6)} LYX` : `Need ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
+          progress: balOk ? `${ethers.formatEther(userBalLyx).slice(0, 6)} LYX` : `Need ${ethers.formatEther(minBalNum).slice(0, 6)} LYX`,
         });
       }
 

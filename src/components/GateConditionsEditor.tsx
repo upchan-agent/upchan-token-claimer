@@ -161,7 +161,7 @@ export function GateConditionsEditor({ gateAddress, chainId, onDone }: Props) {
       </div>
 
       <div style={{ marginTop: 8 }}>
-        <span className="data-label">Token Reqs</span>
+        <span className="data-label" style={{ paddingLeft: 18 }}>Token Reqs</span>
       </div>
 
       {tokenReqs.map((t, i) => (

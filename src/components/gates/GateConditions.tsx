@@ -271,7 +271,7 @@ function ConditionRow({ label, passed, linkDisplay, linkUrl, labelAfter, inactiv
             disabled={followPending}
             className="btn btn-primary btn-follow"
           >
-            {followPending ? 'Following…' : 'Follow'}
+            Follow
           </button>
         )}
       </span>

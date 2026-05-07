@@ -17,8 +17,8 @@ export const GATES: Record<number, GateOption[]> = {
   4201: [
     { id: 'none',       label: 'No Gate',     address: ZERO,                                                    type: 'none' },
     { id: 'req-old',    label: 'Custom Gate (Legacy)', address: '0xdD85274e255738603088312daF502Aa103959a97',     type: 'requirements' },
-    { id: 'mint-gate',  label: 'Mint Gate',   address: '0xC915508fea5ee6a782C899CD4D34b09C6EB7b03e',             type: 'requirements' },
-    { id: 'hold-gate',  label: 'Hold Gate',   address: '0x7DEb57edda3EE65539D8a4b5bC3348656A08c57D',             type: 'requirements' },
+    { id: 'mint-gate',  label: 'Mint Gate',   address: '0x557215d7a583ed3f479d974bc841bd33b9a6d447',             type: 'requirements' },
+    { id: 'hold-gate',  label: 'Hold Gate',   address: '0x46f7f04691bd6c1bd887db69fe8cfcb7b012c3eb',             type: 'requirements' },
   ],
 
   // ─── LUKSO Mainnet (42) ───

@@ -62,12 +62,20 @@ export function StatusCard({ token, status, chain }: Props) {
     {
       label: 'Soulbound',
       value: load ? 'none' : (status.isSoulbound ? 'yes' : 'no'),
-      display: load ? '-' : (status.isSoulbound ? 'Yes' : 'No'),
+      display: load ? '-' : (
+        !status.isSoulbound ? 'No'
+        : !status.isTransferable ? 'Yes (locked)'
+        : 'Yes (made transferable)'
+      ),
     },
     {
       label: 'Revokable',
       value: load ? 'none' : (status.revokable ? 'yes' : 'no'),
-      display: load ? '-' : (status.revokable ? 'Yes' : 'No'),
+      display: load ? '-' : (
+        !status.revokable ? 'No'
+        : status.holdGate !== '0x0000000000000000000000000000000000000000' ? 'Yes'
+        : 'Yes (no Hold Gate)'
+      ),
     },
     {
       label: 'Balance Cap',

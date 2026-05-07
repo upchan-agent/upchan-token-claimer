@@ -14,6 +14,7 @@ export interface TokenStatus {
   isMintable: boolean;
   mintingDisabled: boolean;
   isSoulbound: boolean;
+  isTransferable: boolean;
   revokable: boolean;
   balanceCap: bigint;
   isSupplyCapLocked: boolean;
@@ -37,6 +38,7 @@ interface ServerData {
   isMintable: boolean;
   mintingDisabled: boolean;
   isSoulbound: boolean;
+  isTransferable: boolean;
   revokable: boolean;
   balanceCap: bigint;
   isSupplyCapLocked: boolean;
@@ -52,6 +54,7 @@ const TOKEN_ABI = [
   'function isMintable() view returns (bool)',
   'function mintingDisabled() view returns (bool)',
   'function isSoulbound() view returns (bool)',
+  'function isTransferable() view returns (bool)',
   'function revokable() view returns (bool)',
   'function flexibleSupplyCap() view returns (uint256)',
   'function tokenBalanceCap() view returns (uint256)',
@@ -72,6 +75,7 @@ const SERVER_DEFAULTS: ServerData = {
   isMintable: false,
   mintingDisabled: false,
   isSoulbound: true,
+  isTransferable: true,
   revokable: false,
   balanceCap: 0n,
   isSupplyCapLocked: false,
@@ -90,11 +94,12 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
-  const [ts, im, md, isb, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own] = await Promise.all([
+  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own] = await Promise.all([
     c.totalSupply().catch(() => 0n),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
     c.isSoulbound().catch(() => true),
+    c.isTransferable().catch(() => true),
     c.revokable().catch(() => false),
     c.flexibleSupplyCap().catch(() => 0n),
     c.tokenBalanceCap().catch(() => 0n),
@@ -112,6 +117,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     isMintable: !!im,
     mintingDisabled: !!md,
     isSoulbound: !!isb,
+    isTransferable: !!isTr,
     revokable: !!rev,
     balanceCap: tbc as bigint,
     isSupplyCapLocked: !!iscf,

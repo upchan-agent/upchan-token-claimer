@@ -36,7 +36,9 @@ function StatusIcon({ value }: { value: PropValue }) {
 }
 
 export function StatusCard({ token, status, chain }: Props) {
-  const supplyCapNum = status.supplyCap === 0n ? null : Number(status.supplyCap);
+  const supplyCapNum = status.supplyCap === 0n || status.supplyCap >= (2n ** 256n - 1n) / 2n
+    ? null
+    : Number(status.supplyCap);
   const totalSupplyNum = Number(status.totalSupply);
   const pct = supplyCapNum
     ? Math.min((totalSupplyNum / supplyCapNum) * 100, 100)

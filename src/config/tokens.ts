@@ -30,7 +30,7 @@ export const COMPOSITE_ABI = [
 export const TOKENS: TokenConfig[] = [
   {
     id: 'test-mint-v3',
-    proxy: '0xB510Fdb260d12706a68C646dD309D0c6e0A41615',
+    proxy: '0xc191eb1c0eb7bcf928fb55ada71285a1b01b8c36',
     chainId: 4201,
   },
   {

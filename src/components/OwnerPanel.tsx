@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { TokenConfig } from '@/config/tokens';
 import { GATES, findGate } from '@/config/gates';
@@ -9,6 +9,7 @@ import { useOwnerActions } from '@/lib/useOwnerActions';
 import { useUpProvider } from '@/lib/up-provider';
 import { EmojiText } from './EmojiText';
 import { GateConditionsEditor } from './GateConditionsEditor';
+import { useTxContext } from '@/lib/tx-context';
 
 interface Props {
   token: TokenConfig | null;
@@ -103,6 +104,7 @@ function GatePicker({
 
 export function OwnerPanel({ token, status, chain, onDone }: Props) {
   const { accounts } = useUpProvider();
+  const { sendTx } = useTxContext();
   const isOwner = !!accounts[0] && status.owner.toLowerCase() === accounts[0].toLowerCase();
   const actions = useOwnerActions(token, accounts[0] || null);
   const [openSection, setOpen] = useState<string | null>(null);
@@ -267,6 +269,22 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
             chainId={chainId}
             onDone={onDone}
           />
+          {status.mintGate !== '0x0000000000000000000000000000000000000000' && (
+            <div className="owner-action-row" style={{ marginTop: 8 }}>
+              <button
+                onClick={async () => {
+                  if (!window.confirm('Lock conditions permanently? This cannot be undone!')) return;
+                  const iface = new ethers.Interface(['function lockConditions()']);
+                  const data = iface.encodeFunctionData('lockConditions');
+                  await sendTx('Lock Conditions', status.mintGate as `0x${string}`, data, chainId);
+                  onDone();
+                }}
+                className="btn btn-secondary btn-sm btn-danger"
+              >
+                Lock Conditions
+              </button>
+            </div>
+          )}
         </Section>
 
         <Section label="Hold Gate" open={openSection === 'hold'} onToggle={() => handleToggle('hold')}>
@@ -312,6 +330,22 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
             chainId={chainId}
             onDone={onDone}
           />
+          {status.holdGate !== '0x0000000000000000000000000000000000000000' && (
+            <div className="owner-action-row" style={{ marginTop: 8 }}>
+              <button
+                onClick={async () => {
+                  if (!window.confirm('Lock conditions permanently? This cannot be undone!')) return;
+                  const iface = new ethers.Interface(['function lockConditions()']);
+                  const data = iface.encodeFunctionData('lockConditions');
+                  await sendTx('Lock Conditions', status.holdGate as `0x${string}`, data, chainId);
+                  onDone();
+                }}
+                className="btn btn-secondary btn-sm btn-danger"
+              >
+                Lock Conditions
+              </button>
+            </div>
+          )}
         </Section>
 
         {/* Revoke */}

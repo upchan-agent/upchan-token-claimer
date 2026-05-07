@@ -623,7 +623,6 @@ body {
   align-items: center;
   justify-content: center;
   gap: var(--space-3xs);
-  min-height: 40px;
 }
 
 /* ─── Muted label for inactive (unconfigured) conditions ─── */

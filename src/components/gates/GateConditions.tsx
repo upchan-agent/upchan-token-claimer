@@ -334,7 +334,7 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
         return (
           <ConditionRow
             key={i}
-            label={template.label}
+            label={actualRow?.label ?? template.label}
             passed={actualRow?.passed ?? null}
             inactive={actualRow ? actualRow.inactive : template.inactive}
             linkDisplay={actualRow?.linkDisplay}

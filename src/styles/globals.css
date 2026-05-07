@@ -609,6 +609,7 @@ body {
   gap: var(--space-xs);
   align-items: center;
   padding: var(--space-2xs) 0;
+  min-height: 40px;
 }
 
 .condition-row .data-label {

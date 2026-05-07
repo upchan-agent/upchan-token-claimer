@@ -611,6 +611,10 @@ body {
   padding: var(--space-2xs) 0;
 }
 
+.condition-row .data-label {
+  padding-left: 18px;
+}
+
 /* ─── Condition row right side: icon + optional follow button below ─── */
 
 .condition-row__right {

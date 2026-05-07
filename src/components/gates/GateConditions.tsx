@@ -321,49 +321,34 @@ export function GateConditions({ gateAddress, chainId, userAddress, label, onFol
     try { await onFollow(followInfo.addr); } finally { setFollowPending(false); }
   }, [followInfo, onFollow]);
 
-  // ═══ Render: priority order — noGate → loading → isEmpty → normal ═══
-
-  if (noGate) {
-    return (
-      <div className="conditions-block">
-        <span className="conditions-group-header">{label}</span>
-        <ConditionRow label="No restrictions" passed={null} />
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="conditions-block">
-        <span className="conditions-group-header">{label}</span>
-        {LOADING_ROWS.map((r, i) => (
-            <ConditionRow key={i} {...r} />
-          ))}
-      </div>
-    );
-  }
-
-  if (isEmpty) {
-    return (
-      <div className="conditions-block">
-        <span className="conditions-group-header">{label}</span>
-        <ConditionRow label="No conditions set" passed={null} />
-      </div>
-    );
-  }
+  // ═══ Render: unified — always shows 4 condition rows for stable layout ═══
 
   return (
     <div className="conditions-block">
       <span className="conditions-group-header">{label}</span>
-      {rows.map((r, i) => (
+      {LOADING_ROWS.map((template, i) => {
+        // Use actual row data if available (loaded, non-empty gate)
+        const actualRow = !noGate && !loading && !isEmpty && rows[i]
+          ? rows[i]
+          : null;
+        return (
           <ConditionRow
             key={i}
-            {...r}
-            followInfo={followInfo && i === 0 ? followInfo : null}
-            onFollow={i === 0 ? handleFollow : undefined}
-            followPending={i === 0 ? followPending : false}
+            label={template.label}
+            passed={actualRow?.passed ?? null}
+            inactive={template.inactive && !actualRow}
+            linkDisplay={actualRow?.linkDisplay}
+            linkUrl={actualRow?.linkUrl}
+            followInfo={followInfo && i === 0 && actualRow ? followInfo : null}
+            onFollow={i === 0 && actualRow ? handleFollow : undefined}
+            followPending={i === 0 && followPending}
           />
-        ))}
+        );
+      })}
+      {/* Extra token requirement rows beyond the 4-item template */}
+      {!noGate && !loading && !isEmpty && rows.length > 4 && rows.slice(4).map((r, i) => (
+        <ConditionRow key={'x' + i} {...r} />
+      ))}
     </div>
   );
 }

@@ -19,7 +19,7 @@ export function TokenSelector({
           onClick={() => onSelect(t.id)}
           className={`pill-item${selected === t.id ? ' pill-item--selected' : ''}`}
         >
-          {t.id}
+          {t.label || t.id}
         </button>
       ))}
     </div>

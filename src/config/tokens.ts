@@ -14,6 +14,7 @@
 
 export interface TokenConfig {
   id: string;
+  label?: string;
   proxy: `0x${string}`;
   chainId: number;
 }
@@ -34,47 +35,20 @@ export const COMPOSITE_ABI = [
 // ─── Tokens ───
 export const TOKENS: TokenConfig[] = [
   {
-    id: 't3',
-    proxy: '0xcf628334541e1e71C64a75E0B8aC8139f6830744',
-    chainId: 4201,
-  },
-  {
-    id: 't4',
-    proxy: '0x1d68e3EC3720800899503BC67047a76De97241fb',
-    chainId: 4201,
-  },
-  {
-    id: 't5',
-    proxy: '0x06c196E45f96dFcda6618491506173372851a7B7',
-    chainId: 4201,
-  },
-  {
     id: 't6',
+    label: '🆙chan T6',
     proxy: '0x38dD15D88fe08611C80b5b05c00908F687059CF8',
     chainId: 4201,
   },
   {
     id: 't7',
+    label: '🆙chan T7',
     proxy: '0x8083360ca23223d653ee93C4aF2FB7f8a9a08aec',
     chainId: 4201,
   },
   {
-    id: 't1',
-    proxy: '0x74adA9383f15c96786f05F7A09D02899DFF605dA',
-    chainId: 4201,
-  },
-  {
-    id: 't2',
-    proxy: '0xb6b0fa1d061d9bb2d36c84ad9a213fdb39d2f679',
-    chainId: 4201,
-  },
-  {
-    id: 'test-mint-v3',
-    proxy: '0xc191eb1c0eb7bcf928fb55ada71285a1b01b8c36',
-    chainId: 4201,
-  },
-  {
     id: 'phlametoken',
+    label: 'Phlame Token',
     proxy: '0xe8731f5d5002e2261175afb970517d4c5dad028c',
     chainId: 42,
   }

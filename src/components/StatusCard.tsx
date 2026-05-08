@@ -3,6 +3,7 @@
 import { ethers } from 'ethers';
 import { TokenConfig, assetUrl, profileUrl } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
+import { useProfileMetadata } from '@/lib/useProfileMetadata';
 import { YesIcon, NoIcon, DashIcon } from './Icons';
 
 function fmtSoulbound(s: TokenStatus): string {

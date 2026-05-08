@@ -4,6 +4,20 @@ import { ethers } from 'ethers';
 import { TokenConfig, assetUrl, profileUrl } from '@/config/tokens';
 import { TokenStatus } from '@/lib/useToken';
 import { YesIcon, NoIcon, DashIcon } from './Icons';
+
+function fmtSoulbound(s: TokenStatus): string {
+  if (!s.isSoulbound) return 'No';
+  if (!s.transferLockEnabled) return 'Free';
+  if (s.transferLockStart === 0n && s.transferLockEnd > 2n ** 200n) return 'Forever';
+  if (s.isTransferable) return 'Free';
+  const fmt = (ts: bigint) => {
+    const d = new Date(Number(ts) * 1000);
+    return `'${d.getFullYear().toString().slice(-2)}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+  };
+  if (s.transferLockStart > 0n && s.transferLockEnd === 0n) return `${fmt(s.transferLockStart)}\u007e`;
+  if (s.transferLockStart === 0n && s.transferLockEnd > 0n) return `\u007e${fmt(s.transferLockEnd)}`;
+  return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
+}
 import { EmojiText } from './EmojiText';
 
 interface Props {
@@ -62,11 +76,7 @@ export function StatusCard({ token, status, chain }: Props) {
     {
       label: 'Soulbound',
       value: load ? 'none' : (status.isSoulbound ? 'yes' : 'no'),
-      display: load ? '-' : (
-        !status.isSoulbound ? 'No'
-        : !status.isTransferable ? 'Yes (locked)'
-        : 'Yes (made transferable)'
-      ),
+      display: load ? '-' : fmtSoulbound(status),
     },
     {
       label: 'Revokable',

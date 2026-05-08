@@ -82,6 +82,13 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
   // ─── Transfer ───
   const makeTransferable = useCallback(() => a('makeTransferable', 'Make Transferable', [])(), [a]);
 
+  // ─── Soulbound Period ───
+  const updateTransferLockPeriod = useCallback(
+    (newStart: bigint, newEnd: bigint) =>
+      a('updateTransferLockPeriod(uint256,uint256)', 'Update Soulbound Period', [newStart, newEnd])(),
+    [a]
+  );
+
   // ─── Ownership ───
   const renounceOwnership = useCallback(() => a('renounceOwnership', 'Renounce Ownership', [])(), [a]);
 
@@ -100,6 +107,7 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     setTokenName,
     setTokenSymbol,
     makeTransferable,
+    updateTransferLockPeriod,
     renounceOwnership,
   } as const;
 }

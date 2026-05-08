@@ -37,6 +37,9 @@ export interface GateSettings {
 
 /**
  * Fetch current RequirementsGate settings.
+ * 
+ * TODO: 将来的にトークン一覧は UP.getData(LSP12IssuedAssets[]) から動的取得し、
+ *       この関数も引数で直接 gate アドレスを受け取るようになる。
  */
 export async function fetchGateSettings(
   gateAddress: string,

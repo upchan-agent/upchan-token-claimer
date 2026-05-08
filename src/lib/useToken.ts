@@ -24,6 +24,9 @@ export interface TokenStatus {
   isMintGateLocked: boolean;
   isHoldGateLocked: boolean;
   owner: `0x${string}`;
+  transferLockStart: bigint;
+  transferLockEnd: bigint;
+  transferLockEnabled: boolean;
   canMint: boolean;
   isLoading: boolean;
   isUserDataReady: boolean;
@@ -47,6 +50,9 @@ interface ServerData {
   isMintGateLocked: boolean;
   isHoldGateLocked: boolean;
   owner: `0x${string}`;
+  transferLockStart: bigint;
+  transferLockEnd: bigint;
+  transferLockEnabled: boolean;
 }
 
 const TOKEN_ABI = [
@@ -65,6 +71,9 @@ const TOKEN_ABI = [
   'function holdGate() view returns (address)',
   'function isMintGateLocked() view returns (bool)',
   'function isHoldGateLocked() view returns (bool)',
+  'function transferLockStart() view returns (uint256)',
+  'function transferLockEnd() view returns (uint256)',
+  'function transferLockEnabled() view returns (bool)',
 ];
 
 const DEFAULT_GATE = '0x0000000000000000000000000000000000000000' as const;
@@ -84,6 +93,9 @@ const SERVER_DEFAULTS: ServerData = {
   isMintGateLocked: false,
   isHoldGateLocked: false,
   owner: DEFAULT_GATE,
+  transferLockStart: 0n,
+  transferLockEnd: 0n,
+  transferLockEnabled: false,
 };
 
 // ─── Server data: token-level state (no user dependency) ───
@@ -94,7 +106,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
-  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own] = await Promise.all([
+  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own, tls, tle, tle2] = await Promise.all([
     c.totalSupply().catch(() => 0n),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
@@ -109,6 +121,9 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     c.isMintGateLocked().catch(() => false),
     c.isHoldGateLocked().catch(() => false),
     c.owner().catch(() => DEFAULT_GATE),
+    c.transferLockStart().catch(() => 0n),
+    c.transferLockEnd().catch(() => 0n),
+    c.transferLockEnabled().catch(() => false),
   ]);
 
   return {
@@ -126,6 +141,9 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     isMintGateLocked: !!mgf,
     isHoldGateLocked: !!hgf,
     owner: ethers.getAddress(own) as `0x${string}`,
+    transferLockStart: tls as bigint,
+    transferLockEnd: tle as bigint,
+    transferLockEnabled: !!tle2,
   };
 }
 
@@ -133,6 +151,10 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
 
 /**
  * useTokenStatus — token + user data with 3-tier caching:
+ *
+ * TODO: 将来的に TokenConfig を受け取るのではなく、
+ *       UP.getData(LSP12IssuedAssets[]) から動的にトークン一覧を取得する。
+ *       現在は tokens.ts の静的リスト + オンチェーンデータのハイブリッド。
  *
  * 1. Server query (['token-server', proxy, chainId]):
  *    Token-level state — re-fetched only when token changes

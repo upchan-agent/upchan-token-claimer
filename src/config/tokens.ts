@@ -1,10 +1,15 @@
 // ═══════════════════════════════════════════════
 // 🆙chan Token Claimer — Token Configuration
 //
-// フロントエンド起動用の最小コンフィグ。
-// 基本はオンチェーンから情報を取得する方針。
-// 管理用レジストリ（デプロイ記録・詳細パラメータ）は
-// config/tokens.json を参照。
+// 📌 過渡的な静的コンフィグ
+// 将来的には UP の LSP12IssuedAssets[] から
+// 動的にトークン一覧を取得する方針。
+// その時は TOKENS 配列は不要になり、
+// 代わりに UP.getData(LSP12IssuedAssets) で
+// 全トークンを列挙する。
+//
+// 現在は LSP12 に加えてこの静的リストを
+// フォールバックとして維持。
 // ═══════════════════════════════════════════════
 
 export interface TokenConfig {
@@ -28,6 +33,21 @@ export const COMPOSITE_ABI = [
 
 // ─── Tokens ───
 export const TOKENS: TokenConfig[] = [
+  {
+    id: 't3',
+    proxy: '0xcf628334541e1e71C64a75E0B8aC8139f6830744',
+    chainId: 4201,
+  },
+  {
+    id: 't1',
+    proxy: '0x74adA9383f15c96786f05F7A09D02899DFF605dA',
+    chainId: 4201,
+  },
+  {
+    id: 't2',
+    proxy: '0xb6b0fa1d061d9bb2d36c84ad9a213fdb39d2f679',
+    chainId: 4201,
+  },
   {
     id: 'test-mint-v3',
     proxy: '0xc191eb1c0eb7bcf928fb55ada71285a1b01b8c36',

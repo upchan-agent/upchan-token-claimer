@@ -5,6 +5,20 @@ import { ethers } from 'ethers';
 import { TokenConfig } from '@/config/tokens';
 import { GATES, findGate } from '@/config/gates';
 import { TokenStatus } from '@/lib/useToken';
+
+function fmtSoulbound(s: TokenStatus): string {
+  if (!s.isSoulbound) return 'No';
+  if (!s.transferLockEnabled) return 'Free';
+  if (s.transferLockStart === 0n && s.transferLockEnd > 2n ** 200n) return 'Forever';
+  if (s.isTransferable) return 'Free';
+  const fmt = (ts: bigint) => {
+    const d = new Date(Number(ts) * 1000);
+    return `'${d.getFullYear().toString().slice(-2)}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+  };
+  if (s.transferLockStart > 0n && s.transferLockEnd === 0n) return `${fmt(s.transferLockStart)}~`;
+  if (s.transferLockStart === 0n && s.transferLockEnd > 0n) return `~${fmt(s.transferLockEnd)}`;
+  return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
+}
 import { useOwnerActions } from '@/lib/useOwnerActions';
 import { useUpProvider } from '@/lib/up-provider';
 import { EmojiText } from './EmojiText';
@@ -114,6 +128,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
   const [capInput, setCapInput] = useState('');
   const [revokeAddr, setRevokeAddr] = useState('');
   const [revokeAmount, setRevokeAmount] = useState('1');
+  const [endDate, setEndDate] = useState('');
 
   const handleToggle = (s: string) => {
     toggle(s);
@@ -409,28 +424,49 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
             {'\u26A0\uFE0F'} These actions are irreversible. Proceed with caution.
           </p>
 
-          {/* Make Transferable */}
+          {/* Soulbound: Period + Make Transferable */}
           <div className="data-row" style={{ border: 'none' }}>
             <span className="data-label">Soulbound</span>
-            {status.isSoulbound ? (
-              <span className="data-value">
-                <button
-                  onClick={async () => {
-                    if (window.confirm('Make transferable permanently?')) {
-                      await actions.makeTransferable();
-                      onDone();
-                    }
-                  }}
-                  disabled={actions.isPending}
-                  className="btn btn-secondary btn-sm btn-danger"
-                >
-                  Make Transferable
-                </button>
-              </span>
-            ) : (
-              <span className="data-value text-caption" style={{ color: 'var(--c-text-tertiary)' }}>Already transferable</span>
-            )}
+            <span className="data-value text-caption">
+              {fmtSoulbound(status)}
+              {!status.isSoulbound && ' \u2014 Already transferable'}
+            </span>
           </div>
+          {status.isSoulbound && status.transferLockEnabled && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="text-caption" style={{ fontSize: 11 }}>End:</span>
+              <input
+                type="date"
+                onChange={e => setEndDate(e.target.value)}
+                className="owner-input"
+                style={{ width: 140, fontSize: 12 }}
+              />
+              <button
+                onClick={async () => {
+                  if (!endDate) return;
+                  const ts = BigInt(Math.floor(new Date(endDate + 'T23:59:59').getTime() / 1000));
+                  await actions.updateTransferLockPeriod(0n, ts);
+                  onDone();
+                }}
+                disabled={actions.isPending || !endDate}
+                className="btn btn-primary btn-sm"
+              >
+                Set
+              </button>
+              <button
+                onClick={async () => {
+                  if (window.confirm('Make transferable permanently?')) {
+                    await actions.makeTransferable();
+                    onDone();
+                  }
+                }}
+                disabled={actions.isPending}
+                className="btn btn-secondary btn-sm btn-danger"
+              >
+                Free
+              </button>
+            </div>
+          )}
 
           {/* Renounce Ownership */}
           <div className="data-row" style={{ border: 'none', marginTop: 8 }}>

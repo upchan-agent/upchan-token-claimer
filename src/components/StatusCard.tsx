@@ -72,6 +72,7 @@ export function StatusCard({ token, status, chain }: Props) {
   // All properties always shown — card size maintains stable layout
   // Loading state shows dashes for visual consistency
   const load = status.isLoading;
+  const ownerMeta = useProfileMetadata(status.owner, token.chainId);
   const properties: PropRow[] = [
     {
       label: 'Soulbound',
@@ -129,7 +130,7 @@ export function StatusCard({ token, status, chain }: Props) {
               rel="noopener noreferrer"
               className="data-value link"
             >
-              {status.owner.slice(0, 10)}…{status.owner.slice(-4)} ↗
+              {ownerMeta.data?.name || `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`} ↗
             </a>
           )}
         </div>

@@ -39,6 +39,11 @@ export const TOKENS: TokenConfig[] = [
     chainId: 4201,
   },
   {
+    id: 't4',
+    proxy: '0x1d68e3EC3720800899503BC67047a76De97241fb',
+    chainId: 4201,
+  },
+  {
     id: 't1',
     proxy: '0x74adA9383f15c96786f05F7A09D02899DFF605dA',
     chainId: 4201,

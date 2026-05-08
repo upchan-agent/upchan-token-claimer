@@ -2,8 +2,8 @@
 
 import { Suspense, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { UPProvider } from '@/lib/up-provider';
-import { TxProvider } from '@/lib/tx-context';
+import { UPProvider } from '@/providers/UpProvider';
+import { TxProvider } from '@/providers/TxContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = useState(() => new QueryClient({

@@ -1,11 +1,11 @@
 'use client';
 
 import { ethers } from 'ethers';
-import { useMint, useBurn, TokenStatus } from '@/lib/useToken';
+import { useMint, useBurn, TokenStatus } from '@/hooks/useTokenStatus';
 import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
 import { GateConditions } from './gates/GateConditions';
-import { useTxContext } from '@/lib/tx-context';
+import { useTxContext } from '@/providers/TxContext';
 
 interface Props {
   token: TokenConfig;

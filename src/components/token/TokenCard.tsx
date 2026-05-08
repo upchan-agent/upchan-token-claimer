@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { TokenConfig } from '@/config/tokens';
-import { useTokenOnChainData } from '@/lib/useTokenData';
-import { EmojiText } from './EmojiText';
-import { Popup } from './Popup';
-import './TokenCard.css';
+import { useTokenOnChainData } from '@/hooks/useTokenMeta';
+import { EmojiText } from '../EmojiText';
+import { Popup } from '../Popup';
+import '../TokenCard.css';
 
 function ipfs(url: string): string {
   return url?.replace('ipfs://', 'https://ipfs.io/ipfs/') || '';

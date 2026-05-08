@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { useRequirementsGate, fetchGateSettings, GateSettings } from '@/lib/useRequirementsGate';
+import { useRequirementsGate, fetchGateSettings, GateSettings } from '@/hooks/useGateSettings';
 import { CHAINS } from '@/config/tokens';
-import { TokenSearch } from './TokenSearch';
-import { ProfileSearch } from './ProfileSearch';
+import { TokenSearch } from '../search/TokenSearch';
+import { ProfileSearch } from '../search/ProfileSearch';
 
 interface Props {
   gateAddress: string;
@@ -15,7 +15,7 @@ interface Props {
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 
-export function GateConditionsEditor({ gateAddress, chainId, onDone }: Props) {
+export function GateEditor({ gateAddress, chainId, onDone }: Props) {
   const rg = useRequirementsGate(gateAddress, chainId);
   const [settings, setSettings] = useState<GateSettings | null>(null);
   const [gateType, setGateType] = useState<string | null>(null);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
-import { Popup } from './Popup';
+import { Popup } from '../Popup';
 
 interface Props {
   isOpen: boolean;

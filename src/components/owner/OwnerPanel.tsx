@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { TokenConfig } from '@/config/tokens';
 import { GATES, findGate } from '@/config/gates';
-import { TokenStatus } from '@/lib/useToken';
+import { TokenStatus } from '@/hooks/useTokenStatus';
 
 function fmtSoulbound(s: TokenStatus): string {
   if (!s.isSoulbound) return 'No';
@@ -19,11 +19,11 @@ function fmtSoulbound(s: TokenStatus): string {
   if (s.transferLockStart === 0n && s.transferLockEnd > 0n) return `~${fmt(s.transferLockEnd)}`;
   return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
 }
-import { useOwnerActions } from '@/lib/useOwnerActions';
-import { useUpProvider } from '@/lib/up-provider';
-import { EmojiText } from './EmojiText';
-import { GateConditionsEditor } from './GateConditionsEditor';
-import { useTxContext } from '@/lib/tx-context';
+import { useOwnerActions } from '@/hooks/useOwnerActions';
+import { useUpProvider } from '@/providers/UpProvider';
+import { EmojiText } from '../EmojiText';
+import { GateEditor } from './GateEditor';
+import { useTxContext } from '@/providers/TxContext';
 
 interface Props {
   token: TokenConfig | null;
@@ -279,7 +279,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
               </button>
             </div>
           )}
-          <GateConditionsEditor
+          <GateEditor
             gateAddress={status.mintGate}
             chainId={chainId}
             onDone={onDone}
@@ -340,7 +340,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
               </button>
             </div>
           )}
-          <GateConditionsEditor
+          <GateEditor
             gateAddress={status.holdGate}
             chainId={chainId}
             onDone={onDone}

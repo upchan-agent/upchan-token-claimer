@@ -2,9 +2,9 @@
 
 import { ethers } from 'ethers';
 import { TokenConfig, assetUrl, profileUrl } from '@/config/tokens';
-import { TokenStatus } from '@/lib/useToken';
-import { useProfileMetadata } from '@/lib/useProfileMetadata';
-import { YesIcon, NoIcon, DashIcon } from './Icons';
+import { TokenStatus } from '@/hooks/useTokenStatus';
+import { useProfileMetadata } from '@/hooks/useProfile';
+import { YesIcon, NoIcon, DashIcon } from '../Icons';
 
 function fmtSoulbound(s: TokenStatus): string {
   if (!s.isSoulbound) return 'No';
@@ -19,7 +19,7 @@ function fmtSoulbound(s: TokenStatus): string {
   if (s.transferLockStart === 0n && s.transferLockEnd > 0n) return `\u007e${fmt(s.transferLockEnd)}`;
   return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
 }
-import { EmojiText } from './EmojiText';
+import { EmojiText } from '../EmojiText';
 
 interface Props {
   token: TokenConfig;

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import { useUpProvider } from './up-provider';
+import { useUpProvider } from './UpProvider';
 import { CHAINS, UP_ABI } from '@/config/tokens';
 
 export interface TxRecord {

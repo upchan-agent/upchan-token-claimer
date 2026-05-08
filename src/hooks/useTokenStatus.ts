@@ -4,8 +4,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
 import { TokenConfig, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS } from '@/config/tokens';
-import { EIP1193Provider } from './up-provider';
-import { useTxContext } from './tx-context';
+import { EIP1193Provider } from '../providers/UpProvider';
+import { useTxContext } from '../providers/TxContext';
 
 export interface TokenStatus {
   totalSupply: bigint;

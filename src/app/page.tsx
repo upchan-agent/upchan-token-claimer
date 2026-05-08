@@ -3,17 +3,17 @@
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import { TOKENS, CHAINS } from '@/config/tokens';
-import { useUpProvider } from '@/lib/up-provider';
-import { useViewMode } from '@/lib/useViewMode';
-import { useTokenStatus } from '@/lib/useToken';
+import { useUpProvider } from '@/providers/UpProvider';
+import { useViewMode } from '@/hooks/useViewMode';
+import { useTokenStatus } from '@/hooks/useTokenStatus';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { TokenSelector } from '@/components/TokenSelector';
-import { TokenCard } from '@/components/TokenCard';
-import { StatusCard } from '@/components/StatusCard';
+import { TokenSelector } from '@/components/token/TokenSelector';
+import { TokenCard } from '@/components/token/TokenCard';
+import { StatusCard } from '@/components/token/StatusCard';
 import { ActionCard } from '@/components/ActionCard';
-import { HoldersCard } from '@/components/HoldersCard';
-import { OwnerPanel } from '@/components/OwnerPanel';
+import { HoldersCard } from '@/components/token/HoldersCard';
+import { OwnerPanel } from '@/components/owner/OwnerPanel';
 
 export default function HomePage() {
   const params = useSearchParams();

@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { ethers } from 'ethers';
 import { TokenConfig } from '@/config/tokens';
-import { useTxContext } from './tx-context';
+import { useTxContext } from '../providers/TxContext';
 
 const ABI = [
   'function setIsMintable(bool)',

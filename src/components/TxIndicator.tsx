@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useTxContext, TxRecord } from '@/lib/tx-context';
+import { useTxContext, TxRecord } from '@/providers/TxContext';
 import { CHAINS } from '@/config/tokens';
 
 // ─── Single tx row ──────────────────────────────────────

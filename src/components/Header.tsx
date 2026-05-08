@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useUpProvider } from '@/lib/up-provider';
+import { useUpProvider } from '@/providers/UpProvider';
 import { EmojiText } from './EmojiText';
-import { SearchPopup } from './SearchPopup';
+import { SearchPopup } from './search/SearchPopup';
 import { TxIndicator } from './TxIndicator';
 
 export function Header({ onViewAddress, viewAddress }: {

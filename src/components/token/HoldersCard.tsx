@@ -1,8 +1,8 @@
 'use client';
 
-import { useHolders } from '@/lib/useHolders';
+import { useHolders } from '@/hooks/useHolders';
 import { TokenConfig, profileUrl } from '@/config/tokens';
-import { EmojiText } from './EmojiText';
+import { EmojiText } from '../EmojiText';
 
 function ipfs(url: string) {
   return url?.replace('ipfs://', 'https://ipfs.io/ipfs/') || '';

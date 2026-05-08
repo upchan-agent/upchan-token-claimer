@@ -433,38 +433,40 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
             </span>
           </div>
           {status.isSoulbound && status.transferLockEnabled && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span className="text-caption" style={{ fontSize: 11 }}>End:</span>
-              <input
-                type="date"
-                onChange={e => setEndDate(e.target.value)}
-                className="owner-input"
-                style={{ width: 140, fontSize: 12 }}
-              />
-              <button
-                onClick={async () => {
-                  if (!endDate) return;
-                  const ts = BigInt(Math.floor(new Date(endDate + 'T23:59:59').getTime() / 1000));
-                  await actions.updateTransferLockPeriod(0n, ts);
-                  onDone();
-                }}
-                disabled={actions.isPending || !endDate}
-                className="btn btn-primary btn-sm"
-              >
-                Set
-              </button>
-              <button
-                onClick={async () => {
-                  if (window.confirm('Make transferable permanently?')) {
-                    await actions.makeTransferable();
+            <div className="data-row" style={{ border: 'none' }}>
+              <span className="data-label">Period End</span>
+              <span className="data-value" style={{ justifyContent: 'flex-start', gap: 6 }}>
+                <input
+                  type="date"
+                  onChange={e => setEndDate(e.target.value)}
+                  className="owner-input"
+                  style={{ width: 140, fontSize: 12 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!endDate) return;
+                    const ts = BigInt(Math.floor(new Date(endDate + 'T23:59:59').getTime() / 1000));
+                    await actions.updateTransferLockPeriod(0n, ts);
                     onDone();
-                  }
-                }}
-                disabled={actions.isPending}
-                className="btn btn-secondary btn-sm btn-danger"
-              >
-                Free
-              </button>
+                  }}
+                  disabled={actions.isPending || !endDate}
+                  className="btn btn-primary btn-sm"
+                >
+                  Set
+                </button>
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Make transferable permanently?')) {
+                      await actions.makeTransferable();
+                      onDone();
+                    }
+                  }}
+                  disabled={actions.isPending}
+                  className="btn btn-secondary btn-sm btn-danger"
+                >
+                  Free
+                </button>
+              </span>
             </div>
           )}
 

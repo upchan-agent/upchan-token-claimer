@@ -131,6 +131,13 @@ export function StatusCard({ token, status, chain }: Props) {
               rel="noopener noreferrer"
               className="data-value link"
             >
+              {ownerMeta.data?.image && (
+                <img
+                  src={ownerMeta.data.image.replace('ipfs://', 'https://ipfs.io/ipfs/')}
+                  alt=""
+                  style={{ width: 16, height: 16, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}
+                />
+              )}
               {ownerMeta.data?.name || `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`} ↗
             </a>
           )}

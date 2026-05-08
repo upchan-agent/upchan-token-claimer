@@ -129,6 +129,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
   const [revokeAddr, setRevokeAddr] = useState('');
   const [revokeAmount, setRevokeAmount] = useState('1');
   const [endDate, setEndDate] = useState('');
+  const [transferAddr, setTransferAddr] = useState('');
 
   const handleToggle = (s: string) => {
     toggle(s);
@@ -470,9 +471,37 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
             </div>
           )}
 
+          {/* Transfer Ownership */}
+          <div className="data-row" style={{ border: 'none', marginTop: 8 }}>
+            <span className="data-label">Transfer To</span>
+            <span className="data-value" style={{ justifyContent: 'flex-start', gap: 6 }}>
+              <input
+                type="text"
+                placeholder="0x..."
+                value={transferAddr}
+                onChange={e => setTransferAddr(e.target.value)}
+                className="owner-input"
+                style={{ flex: 1, minWidth: 120, fontFamily: 'monospace', fontSize: 12 }}
+              />
+              <button
+                onClick={async () => {
+                  if (!ethers.isAddress(transferAddr)) return;
+                  if (window.confirm('Transfer ownership to ' + transferAddr.slice(0, 10) + '...?')) {
+                    await actions.transferOwnership(transferAddr);
+                    onDone();
+                  }
+                }}
+                disabled={actions.isPending || !ethers.isAddress(transferAddr)}
+                className="btn btn-primary btn-sm"
+              >
+                Transfer
+              </button>
+            </span>
+          </div>
+
           {/* Renounce Ownership */}
           <div className="data-row" style={{ border: 'none', marginTop: 8 }}>
-            <span className="data-label">Ownership</span>
+            <span className="data-label">Renounce</span>
             <span className="data-value">
               <button
                 onClick={async () => {

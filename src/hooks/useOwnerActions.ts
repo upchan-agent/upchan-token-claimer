@@ -18,6 +18,7 @@ const ABI = [
   'function setData(bytes32, bytes)',
   'function makeTransferable()',
   'function renounceOwnership()',
+  'function transferOwnership(address)',
 ];
 
 const LSP4_TOKEN_NAME = '0xdeba1e292f8ba88238e10ab3c7f88bd4be4fac56cad5194b6ecceaf653468af1';
@@ -92,6 +93,13 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
   // ─── Ownership ───
   const renounceOwnership = useCallback(() => a('renounceOwnership', 'Renounce Ownership', [])(), [a]);
 
+  // ─── Transfer Ownership ───
+  const transferOwnership = useCallback(
+    (newOwner: string) =>
+      a('transferOwnership(address)', 'Transfer Ownership', [newOwner])(),
+    [a]
+  );
+
   return {
     isPending: pendingKey !== null,
     pendingKey,
@@ -108,6 +116,7 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     setTokenSymbol,
     makeTransferable,
     updateTransferLockPeriod,
+    transferOwnership,
     renounceOwnership,
   } as const;
 }

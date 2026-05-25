@@ -31,35 +31,39 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
   const isSoldOut = status.supplyCap > 0n && status.totalSupply >= status.supplyCap;
 
   // ─── Mint button ───
-  const mintDisabled = !displayAddress || mintPending || !status.canMint;
+  const mintDisabled = !displayAddress || mintPending || (status.isUserDataReady && !status.canMint) || status.isLoading;
   const mintLabel = !displayAddress
     ? 'Mint NFT'
     : mintPending
       ? 'Minting...'
-      : status.mintingDisabled
-        ? 'Minting Closed'
-        : isAtMaxBalance
-          ? 'Max Reached'
-          : isSoldOut
-            ? 'Sold Out'
-            : !status.isMintable
-              ? 'Paused'
-              : 'Mint NFT';
+      : status.isLoading
+        ? 'Mint NFT'
+        : status.mintingDisabled
+          ? 'Minting Closed'
+          : isAtMaxBalance
+            ? 'Max Reached'
+            : isSoldOut
+              ? 'Sold Out'
+              : !status.isMintable
+                ? 'Paused'
+                : 'Mint NFT';
 
   // ─── Burn button ───
-  const burnDisabled = !displayAddress || !hasTokens || burnPending;
+  const burnDisabled = !displayAddress || !hasTokens || burnPending || status.isLoading;
   const burnLabel = !displayAddress
     ? 'Burn'
     : burnPending
       ? 'Burning...'
-      : !hasTokens
+      : status.isLoading
         ? 'Burn'
         : 'Burn 1';
 
   // ─── Status line ───
   const statusLine = !displayAddress
     ? 'Connect to interact'
-    : `Connected · You hold ${userBal}${balCap ? ` / ${balCap}` : ''}`;
+    : status.isLoading
+      ? 'Connected · —'
+      : `Connected · You hold ${userBal}${balCap ? ` / ${balCap}` : ''}`;
 
   return (
     <div className="card anim anim-d3">

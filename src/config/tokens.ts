@@ -58,6 +58,12 @@ export const TOKENS: TokenConfig[] = [
     proxy: '0x8c93ca6dfe849EF8f8fAE0200A4E0038a635bD05',
     chainId: 4201,
   },
+  {
+    id: 'impltest',
+    label: '🆙chan new impl Test',
+    proxy: '0xc2c546929514cf14150ebf57ffc4b42fc226993d',
+    chainId: 4201,
+  },  
 ];
 
 // ─── Chains ───

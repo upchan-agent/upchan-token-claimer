@@ -146,7 +146,34 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
 
   const hasHoldGate = status.holdGate !== '0x0000000000000000000000000000000000000000';
 
-  if (!isOwner) return null;
+  if (!isOwner) {
+    // 自分がpendingOwnerの場合、Acceptボタンを表示
+    const isPendingOwner = !!accounts[0] && status.pendingOwner.toLowerCase() === accounts[0].toLowerCase();
+    if (isPendingOwner) {
+      return (
+        <div className="card anim anim-d5">
+          <div className="card-section">
+            <span className="section-label">{'🔑'} Pending Ownership</span>
+            <p className="text-caption" style={{ margin: '8px 0' }}>
+              Ownership transfer is pending. Accept to become the new owner.
+            </p>
+            <button
+              onClick={async () => {
+                await actions.acceptOwnership();
+                onDone();
+              }}
+              disabled={actions.isPending}
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+            >
+              {actions.isPending ? 'Accepting...' : 'Accept Ownership'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="card anim anim-d5">

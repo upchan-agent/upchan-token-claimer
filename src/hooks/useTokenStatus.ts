@@ -24,6 +24,7 @@ export interface TokenStatus {
   isMintGateLocked: boolean;
   isHoldGateLocked: boolean;
   owner: `0x${string}`;
+  pendingOwner: `0x${string}`;
   transferLockStart: bigint;
   transferLockEnd: bigint;
   transferLockEnabled: boolean;
@@ -50,6 +51,7 @@ interface ServerData {
   isMintGateLocked: boolean;
   isHoldGateLocked: boolean;
   owner: `0x${string}`;
+  pendingOwner: `0x${string}`;
   transferLockStart: bigint;
   transferLockEnd: bigint;
   transferLockEnabled: boolean;
@@ -67,6 +69,7 @@ const TOKEN_ABI = [
   'function isSupplyCapLocked() view returns (bool)',
   'function mintGate() view returns (address)',
   'function owner() view returns (address)',
+  'function pendingOwner() view returns (address)',
   'function balanceOf(address) view returns (uint256)',
   'function holdGate() view returns (address)',
   'function isMintGateLocked() view returns (bool)',
@@ -93,6 +96,7 @@ const SERVER_DEFAULTS: ServerData = {
   isMintGateLocked: false,
   isHoldGateLocked: false,
   owner: DEFAULT_GATE,
+  pendingOwner: DEFAULT_GATE,
   transferLockStart: 0n,
   transferLockEnd: 0n,
   transferLockEnabled: false,
@@ -106,7 +110,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
-  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own, tls, tle, tle2] = await Promise.all([
+  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own, po, tls, tle, tle2] = await Promise.all([
     c.totalSupply().catch(() => 0n),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
@@ -121,6 +125,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     c.isMintGateLocked().catch(() => false),
     c.isHoldGateLocked().catch(() => false),
     c.owner().catch(() => DEFAULT_GATE),
+    c.pendingOwner().catch(() => DEFAULT_GATE),
     c.transferLockStart().catch(() => 0n),
     c.transferLockEnd().catch(() => 0n),
     c.transferLockEnabled().catch(() => false),
@@ -141,6 +146,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     isMintGateLocked: !!mgf,
     isHoldGateLocked: !!hgf,
     owner: ethers.getAddress(own) as `0x${string}`,
+    pendingOwner: ethers.getAddress(po) as `0x${string}`,
     transferLockStart: tls as bigint,
     transferLockEnd: tle as bigint,
     transferLockEnabled: !!tle2,

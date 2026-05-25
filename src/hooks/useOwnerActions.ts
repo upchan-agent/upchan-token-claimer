@@ -7,14 +7,14 @@ import { useTxContext } from '../providers/TxContext';
 
 const ABI = [
   'function setIsMintable(bool)',
-  'function disableMinting()',
+  'function permanentlyDisableMinting()',
   'function updateSupplyCap(uint256)',
   'function lockSupplyCap()',
   'function setMintGate(address)',
   'function lockMintGate()',
   'function setHoldGate(address)',
   'function lockHoldGate()',
-  'function revokeByGate(address from, address to, uint256 amount, bytes data)',
+  'function revokeByGate(address)',
   'function setData(bytes32, bytes)',
   'function makeTransferable()',
   'function renounceOwnership()',
@@ -53,7 +53,7 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
 
   // ─── Mint Control ───
   const setIsMintable = useCallback((v: boolean) => a('setIsMintable', `Set Minting ${v ? 'Open' : 'Paused'}`, [v])(), [a]);
-  const disableMinting = useCallback(() => a('disableMinting', 'Disable Minting', [])(), [a]);
+  const permanentlyDisableMinting = useCallback(() => a('permanentlyDisableMinting', 'Permanently Disable Minting', [])(), [a]);
 
   // ─── Supply Cap ───
   const updateSupplyCap = useCallback((cap: bigint) => a('updateSupplyCap', 'Update Supply Cap', [cap])(), [a]);
@@ -67,7 +67,7 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
 
   // ─── Revoke ───
   const revokeByGate = useCallback(
-    (from: string, to: string, amount: bigint) => a('revokeByGate', 'Revoke by Gate', [from, to, amount, '0x'])(),
+    (from: string) => a('revokeByGate', 'Revoke by Gate', [from])(),
     [a],
   );
 
@@ -110,7 +110,7 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     isPending: pendingKey !== null,
     pendingKey,
     setIsMintable,
-    disableMinting,
+    permanentlyDisableMinting,
     updateSupplyCap,
     lockSupplyCap,
     setMintGate,

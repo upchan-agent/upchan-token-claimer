@@ -201,7 +201,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
               <button
                 onClick={async () => {
                   if (window.confirm('Permanently disable minting?')) {
-                    await actions.disableMinting();
+                    await actions.permanentlyDisableMinting();
                     onDone();
                   }
                 }}
@@ -427,7 +427,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   onClick={async () => {
                     if (!revokeAddr || !ethers.isAddress(revokeAddr)) return;
                     if (!window.confirm('Revoke from ' + revokeAddr.slice(0, 8) + '...?')) return;
-                    await actions.revokeByGate(revokeAddr, status.owner, BigInt(revokeAmount || '1'));
+                    await actions.revokeByGate(revokeAddr);
                     onDone();
                   }}
                   disabled={actions.isPending || !revokeAddr || !ethers.isAddress(revokeAddr)}

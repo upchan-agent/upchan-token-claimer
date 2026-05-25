@@ -153,7 +153,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
       return (
         <div className="card anim anim-d5">
           <div className="card-section">
-            <span className="section-label">{'\\uD83D\\uDD11'} Pending Ownership</span>
+            <span className="section-label">{'🔑'} Pending Ownership</span>
             <p className="text-caption" style={{ margin: '8px 0' }}>
               Ownership transfer is pending. Accept to become the new owner.
             </p>

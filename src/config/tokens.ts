@@ -51,7 +51,13 @@ export const TOKENS: TokenConfig[] = [
     label: 'Phlame Token',
     proxy: '0xe8731f5d5002e2261175afb970517d4c5dad028c',
     chainId: 42,
-  }
+  },
+  {
+    id: 'bs-test',
+    label: '🆙chan BS Test',
+    proxy: '0x8c93ca6dfe849EF8f8fAE0200A4E0038a635bD05',
+    chainId: 4201,
+  },
 ];
 
 // ─── Chains ───

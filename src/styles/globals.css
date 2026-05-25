@@ -494,6 +494,12 @@ body {
   padding: 6px 14px;
 }
 
+/* Action bar buttons need min-width to prevent layout shift on label change.
+   Header buttons (e.g. Connect 🆙) should remain auto-width. */
+.action-bar .btn-sm {
+  min-width: 130px;
+}
+
 /* Follow button inside gate conditions */
 .btn-follow {
   font-size: 12px;
@@ -600,6 +606,13 @@ body {
 
 .data-value.link {
   color: var(--c-accent);
+}
+
+/* Value fade — opacity transition for data that loads asynchronously.
+   Used across all cards: StatusCard values, ActionCard buttons, HoldersCard count.
+   Toggle via inline style { opacity: 0 | 1 } — the transition lives in CSS. */
+.value-fade {
+  transition: opacity 0.25s ease;
 }
 
 /* ─── Condition row: 2-column variant for gate conditions (label | icon + value) ─── */

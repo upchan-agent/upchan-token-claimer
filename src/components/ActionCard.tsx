@@ -22,6 +22,7 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
   const { burn, isPending: burnPending } = useBurn(token, addr, onRefetch);
 
   // ─── Derived state ───
+  const allDataReady = !status.isLoading && status.isUserDataReady;
   const hasMintGate = status.mintExtensionCount > 0;
   const hasHoldGate = status.holdExtensionCount > 0;
   const isAtMaxBalance = status.balanceCap > 0n && status.userBalance >= status.balanceCap;
@@ -31,39 +32,35 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
   const isSoldOut = status.supplyCap > 0n && status.totalSupply >= status.supplyCap;
 
   // ─── Mint button ───
-  const mintDisabled = !displayAddress || mintPending || (status.isUserDataReady && !status.canMint) || status.isLoading;
+  const mintDisabled = !displayAddress || mintPending || !allDataReady || (allDataReady && !status.canMint);
   const mintLabel = !displayAddress
     ? 'Mint NFT'
     : mintPending
       ? 'Minting...'
-      : status.isLoading
-        ? 'Mint NFT'
-        : status.mintingDisabled
-          ? 'Minting Closed'
-          : isAtMaxBalance
-            ? 'Max Reached'
-            : isSoldOut
-              ? 'Sold Out'
-              : !status.isMintable
-                ? 'Paused'
-                : 'Mint NFT';
+      : status.mintingDisabled
+        ? 'Minting Closed'
+        : isAtMaxBalance
+          ? 'Max Reached'
+          : isSoldOut
+            ? 'Sold Out'
+            : !status.isMintable
+              ? 'Paused'
+              : 'Mint NFT';
 
   // ─── Burn button ───
-  const burnDisabled = !displayAddress || !hasTokens || burnPending || status.isLoading;
+  const burnDisabled = !displayAddress || !hasTokens || burnPending || !allDataReady;
   const burnLabel = !displayAddress
     ? 'Burn'
     : burnPending
       ? 'Burning...'
-      : status.isLoading
+      : !hasTokens
         ? 'Burn'
         : 'Burn 1';
 
   // ─── Status line ───
   const statusLine = !displayAddress
     ? 'Connect to interact'
-    : status.isLoading
-      ? 'Connected · —'
-      : `Connected · You hold ${userBal}${balCap ? ` / ${balCap}` : ''}`;
+    : `Connected · You hold ${userBal}${balCap ? ` / ${balCap}` : ''}`;
 
   return (
     <div className="card anim anim-d3">
@@ -114,25 +111,27 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
       <div className="card-section card-section--center card-block--action">
         <span className="section-label"><EmojiText>🐰 Claim&Action 🐰</EmojiText></span>
 
-        <div className="action-bar">
-          <button
-            onClick={mint}
-            disabled={mintDisabled}
-            className="btn btn-primary btn-sm"
-          >
-            {mintLabel}
-          </button>
+        <div className="value-fade" style={{ opacity: allDataReady ? 1 : 0 }}>
+          <div className="action-bar">
+            <button
+              onClick={mint}
+              disabled={mintDisabled}
+              className="btn btn-primary btn-sm"
+            >
+              {mintLabel}
+            </button>
 
-          <button
-            onClick={() => burn(1)}
-            disabled={burnDisabled}
-            className="btn btn-secondary btn-sm"
-          >
-            {burnLabel}
-          </button>
+            <button
+              onClick={() => burn(1)}
+              disabled={burnDisabled}
+              className="btn btn-secondary btn-sm"
+            >
+              {burnLabel}
+            </button>
+          </div>
+
+          <p className="action-status">{statusLine}</p>
         </div>
-
-        <p className="action-status">{statusLine}</p>
       </div>
     </div>
   );

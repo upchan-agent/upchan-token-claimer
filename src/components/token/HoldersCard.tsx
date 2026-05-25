@@ -16,7 +16,7 @@ export function HoldersCard({ token }: { token: TokenConfig }) {
       <div className="card-section">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="section-label"><EmojiText>🐱 Holders 🐱</EmojiText></span>
-          <span className="section-label">{holders.length}</span>
+          <span className="section-label value-fade" style={{ opacity: isLoading ? 0 : 1 }}>{holders.length}</span>
         </div>
 
         <div className="holder-list">

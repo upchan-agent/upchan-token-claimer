@@ -5,16 +5,14 @@ import { TokenConfig, assetUrl, profileUrl } from '@/config/tokens';
 import { TokenStatus } from '@/hooks/useTokenStatus';
 import { useProfileMetadata } from '@/hooks/useProfile';
 import { YesIcon, NoIcon, DashIcon } from '../Icons';
+import { EmojiText } from '../EmojiText';
 
 function fmtSoulbound(s: TokenStatus): string {
-  // New contract: transferLockEnabled is always false (no individual getters)
-  // Use simplified display
   if (!s.transferLockEnabled) {
     if (s.isTransferable) return 'No';
     if (s.isSoulbound) return 'Yes';
     return '—';
   }
-  // Legacy: full transfer lock details available
   if (!s.isSoulbound) return 'No';
   if (s.transferLockStart === 0n && s.transferLockEnd > 2n ** 200n) return 'Forever';
   if (s.isTransferable) return 'No';
@@ -26,7 +24,6 @@ function fmtSoulbound(s: TokenStatus): string {
   if (s.transferLockStart === 0n && s.transferLockEnd > 0n) return `\u007e${fmt(s.transferLockEnd)}`;
   return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
 }
-import { EmojiText } from '../EmojiText';
 
 interface Props {
   token: TokenConfig;
@@ -57,8 +54,20 @@ function StatusIcon({ value }: { value: PropValue }) {
   return null;
 }
 
+/** Opacity fade only the VALUE part — labels stay visible.
+ *  CSS transition is in .value-fade class; only opacity toggles inline. */
+const fade = (ready: boolean) => ({
+  opacity: ready ? 1 : 0,
+});
+
 export function StatusCard({ token, status, chain }: Props) {
   const load = status.isLoading;
+  const ownerMeta = useProfileMetadata(status.owner, token.chainId);
+
+  // contentReady = server data + owner profile metadata both available
+  const contentReady = !load && !ownerMeta.isLoading;
+
+  // ─── Supply (always computed from current props) ───
   const supplyCapNum = status.supplyCap === 0n || status.supplyCap >= (2n ** 256n - 1n) / 2n
     ? null
     : Number(status.supplyCap);
@@ -67,57 +76,53 @@ export function StatusCard({ token, status, chain }: Props) {
     ? Math.min((totalSupplyNum / supplyCapNum) * 100, 100)
     : 0;
 
-  const statusClass = load
-    ? 'status-pill--open'
-    : status.mintingDisabled
-      ? 'status-pill--closed'
-      : status.isMintable
-        ? 'status-pill--open'
-        : 'status-pill--paused';
-  const statusLabel = load
-    ? 'Minting Open'
-    : status.mintingDisabled
-      ? 'Minting Closed'
-      : status.isMintable
-        ? 'Minting Open'
-        : 'Paused';
+  // ─── Status pill (always real value — invisible until ready) ───
+  const statusClass = status.mintingDisabled
+    ? 'status-pill--closed'
+    : status.isMintable
+      ? 'status-pill--open'
+      : 'status-pill--paused';
+  const statusLabel = status.mintingDisabled
+    ? 'Minting Closed'
+    : status.isMintable
+      ? 'Minting Open'
+      : 'Paused';
 
-  // All properties always shown — card size maintains stable layout
-  // Loading state shows dashes for visual consistency
-  const ownerMeta = useProfileMetadata(status.owner, token.chainId);
+  // ─── Properties (always real values — invisible until ready) ───
   const properties: PropRow[] = [
     {
       label: 'Soulbound',
-      value: load ? 'none' : (status.isSoulbound ? 'yes' : 'no'),
-      display: load ? '—' : fmtSoulbound(status),
+      value: status.isSoulbound ? 'yes' : 'no',
+      display: fmtSoulbound(status),
     },
     {
       label: 'Revokable',
-      value: load ? 'none' : (status.revokable ? 'yes' : 'no'),
-      display: load ? '—' : (
-        !status.revokable ? 'No'
+      value: status.revokable ? 'yes' : 'no',
+      display: !status.revokable ? 'No'
         : status.holdExtensionCount > 0 ? 'Yes'
-        : 'Yes (no hold ext)'
-      ),
+        : 'Yes (no hold ext)',
     },
     {
       label: 'Balance Cap',
-      value: load ? 'none' : (status.balanceCap > 0n ? 'yes' : 'none'),
-      display: load ? '—' : (status.balanceCap > 0n ? String(status.balanceCap) : '—'),
+      value: status.balanceCap > 0n ? 'yes' : 'none',
+      display: status.balanceCap > 0n ? String(status.balanceCap) : '—',
     },
     {
       label: 'Cap Status',
-      value: load ? 'none' : (status.isSupplyCapLocked ? 'yes' : 'none'),
-      display: load ? '-' : (status.isSupplyCapLocked ? 'Locked' : 'Flexible'),
+      value: status.isSupplyCapLocked ? 'yes' : 'none',
+      display: status.isSupplyCapLocked ? 'Locked 🔒' : 'Flexible',
     },
   ];
 
   return (
     <div className="card anim anim-d2">
+      {/* ═══════════════════════════════════════════
+          Details — labels always visible, values fade in
+          ═══════════════════════════════════════════ */}
       <div className="card-section">
         <span className="section-label"><EmojiText>🍭 Details 🍭</EmojiText></span>
 
-        {/* Contract */}
+        {/* Contract — static from config */}
         <div className="data-row">
           <span className="data-label">Contract</span>
           <a
@@ -126,19 +131,19 @@ export function StatusCard({ token, status, chain }: Props) {
             rel="noopener noreferrer"
             className="data-value link"
           >
-            {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)} ↗
+            {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)}
           </a>
         </div>
 
-        {/* Owner */}
+        {/* Owner — label visible, value fades */}
         <div className="data-row">
           <span className="data-label">Owner</span>
           <a
-            href={load ? '#' : profileUrl(status.owner)}
-            target={load ? undefined : '_blank'}
-            rel={load ? undefined : 'noopener noreferrer'}
-            className="data-value link"
-            style={load ? { pointerEvents: 'none', opacity: 0.56 } : {}}
+            href={profileUrl(status.owner)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="data-value link value-fade"
+            style={fade(contentReady)}
           >
             {ownerMeta.data?.image && (
               <img
@@ -147,79 +152,72 @@ export function StatusCard({ token, status, chain }: Props) {
                 style={{ width: 16, height: 16, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}
               />
             )}
-            {load
-              ? `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`
-              : (status.owner === ethers.ZeroAddress ? 'Renounced' : (ownerMeta.data?.name || `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`))
-            }
-            {!load && ' ↗'}
+            {status.owner === ethers.ZeroAddress
+              ? 'Renounced'
+              : (ownerMeta.data?.name || `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`)}
           </a>
         </div>
 
-        {/* Network */}
+        {/* Network — static from config */}
         <div className="data-row">
           <span className="data-label">Network</span>
           <span className="data-value">{chain.name}</span>
         </div>
 
-        {/* Status */}
+        {/* Status — label visible, pill fades */}
         <div className="data-row">
           <span className="data-label">Status</span>
-          <span className="data-value">
+          <span className="data-value value-fade" style={fade(contentReady)}>
             <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
           </span>
         </div>
 
-        {/* Supply */}
+        {/* Supply — label visible, bar + count fade */}
         <div className="data-row data-row--supply">
           <span className="data-label">Supply</span>
-          <span className="data-value">
+          <span className="data-value value-fade" style={fade(contentReady)}>
             <div className="progress-fill" style={{ width: `${pct}%` }} />
             <span>{totalSupplyNum} / {supplyCapNum ?? '∞'}</span>
           </span>
         </div>
       </div>
 
-      {/* Properties */}
+      {/* ═══════════════════════════════════════════
+          Properties — labels always visible, values fade in
+          ═══════════════════════════════════════════ */}
       <div className="card-section">
         <span className="section-label"><EmojiText>🍬 Properties 🍬</EmojiText></span>
+
         {properties.map((p) => (
           <div className="data-row" key={p.label}>
             <span className="data-label">{p.label}</span>
-            <StatusIcon value={p.value} />
-            <span className="data-value">{p.display}</span>
+            <span style={fade(contentReady)}><StatusIcon value={p.value} /></span>
+            <span className="data-value value-fade" style={fade(contentReady)}>{p.display}</span>
           </div>
         ))}
 
-        {/* Mint Conditions */}
+        {/* Mint Conditions — label visible, icon + value fade */}
         <div className="data-row">
           <span className="data-label">Mint Conditions</span>
-          {load ? (
-            <><StatusIcon value="none" /><span className="data-value">-</span></>
-          ) : (
-            <>
-              <StatusIcon value={status.mintConditionsLocked ? 'yes' : 'none'} />
-              <span className="data-value">
-                {status.mintConditionsLocked ? 'Locked 🔒' : 'Flexible'}
-                {status.mintExtensionCount > 0 && ` · ${status.mintExtensionCount} ext`}
-              </span>
-            </>
-          )}
-        </div>
+          <span style={fade(contentReady)}>
+            <StatusIcon value={status.mintConditionsLocked ? 'yes' : 'none'} />
+          </span>
+            <span className="data-value value-fade" style={fade(contentReady)}>
+              {status.mintConditionsLocked ? 'Locked 🔒' : 'Flexible'}
+              {status.mintExtensionCount > 0 && ` · ${status.mintExtensionCount} ext`}
+            </span>
+          </div>
 
         {/* Hold Conditions */}
         <div className="data-row">
           <span className="data-label">Hold Conditions</span>
-          {load ? (
-            <><StatusIcon value="none" /><span className="data-value">-</span></>
-          ) : (
-            <>
-              <StatusIcon value={status.holdConditionsLocked ? 'yes' : 'none'} />
-              <span className="data-value">
-                {status.holdConditionsLocked ? 'Locked 🔒' : 'Flexible'}
-                {status.holdExtensionCount > 0 && ` · ${status.holdExtensionCount} ext`}
-              </span>
-            </>
-          )}
+          <span style={fade(contentReady)}>
+            <StatusIcon value={status.holdConditionsLocked ? 'yes' : 'none'} />
+          </span>
+            <span className="data-value value-fade" style={fade(contentReady)}>
+              {status.holdConditionsLocked ? 'Locked 🔒' : 'Flexible'}
+              {status.holdExtensionCount > 0 && ` · ${status.holdExtensionCount} ext`}
+            </span>
         </div>
       </div>
 

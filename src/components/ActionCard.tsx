@@ -72,6 +72,8 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
         <div className="conditions-area">
           <GateConditions
             gateAddress={status.mintGate}
+            tokenProxy={token.proxy}
+            mode="mint"
             chainId={token.chainId}
             userAddress={addr}
             label="Mint"
@@ -83,6 +85,8 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
           />
           <GateConditions
             gateAddress={status.holdGate}
+            tokenProxy={token.proxy}
+            mode="hold"
             chainId={token.chainId}
             userAddress={addr}
             label="Hold"

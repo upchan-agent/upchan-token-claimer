@@ -19,15 +19,27 @@ export interface TokenStatus {
   balanceCap: bigint;
   isSupplyCapLocked: boolean;
   isFollowing: boolean;
+  /** @deprecated Replaced by extension-based conditions */
   mintGate: `0x${string}`;
+  /** @deprecated Replaced by extension-based conditions */
   holdGate: `0x${string}`;
+  /** @deprecated Replaced by new conditionsLocked fields */
   isMintGateLocked: boolean;
+  /** @deprecated Replaced by new conditionsLocked fields */
   isHoldGateLocked: boolean;
   owner: `0x${string}`;
   pendingOwner: `0x${string}`;
   transferLockStart: bigint;
   transferLockEnd: bigint;
   transferLockEnabled: boolean;
+  /** Mint conditions locked (irreversible) */
+  mintConditionsLocked: boolean;
+  /** Hold conditions locked (irreversible) */
+  holdConditionsLocked: boolean;
+  /** Number of mint extension contracts */
+  mintExtensionCount: number;
+  /** Number of hold extension contracts */
+  holdExtensionCount: number;
   canMint: boolean;
   isLoading: boolean;
   isUserDataReady: boolean;
@@ -46,16 +58,15 @@ interface ServerData {
   revokable: boolean;
   balanceCap: bigint;
   isSupplyCapLocked: boolean;
-  mintGate: `0x${string}`;
-  holdGate: `0x${string}`;
-  isMintGateLocked: boolean;
-  isHoldGateLocked: boolean;
   owner: `0x${string}`;
   pendingOwner: `0x${string}`;
-  transferLockStart: bigint;
-  transferLockEnd: bigint;
-  transferLockEnabled: boolean;
+  mintConditionsLocked: boolean;
+  holdConditionsLocked: boolean;
+  mintExtensionCount: number;
+  holdExtensionCount: number;
 }
+
+const ZERO = '0x0000000000000000000000000000000000000000' as const;
 
 const TOKEN_ABI = [
   'function totalSupply() view returns (uint256)',
@@ -67,19 +78,12 @@ const TOKEN_ABI = [
   'function flexibleSupplyCap() view returns (uint256)',
   'function tokenBalanceCap() view returns (uint256)',
   'function isSupplyCapLocked() view returns (bool)',
-  'function mintGate() view returns (address)',
   'function owner() view returns (address)',
   'function pendingOwner() view returns (address)',
   'function balanceOf(address) view returns (uint256)',
-  'function holdGate() view returns (address)',
-  'function isMintGateLocked() view returns (bool)',
-  'function isHoldGateLocked() view returns (bool)',
-  'function transferLockStart() view returns (uint256)',
-  'function transferLockEnd() view returns (uint256)',
-  'function transferLockEnabled() view returns (bool)',
+  'function getMintConditions() view returns (uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool,bool,uint256)',
+  'function getHoldConditions() view returns (uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool,bool,uint256)',
 ];
-
-const DEFAULT_GATE = '0x0000000000000000000000000000000000000000' as const;
 
 const SERVER_DEFAULTS: ServerData = {
   totalSupply: 0n,
@@ -91,15 +95,12 @@ const SERVER_DEFAULTS: ServerData = {
   revokable: false,
   balanceCap: 0n,
   isSupplyCapLocked: false,
-  mintGate: DEFAULT_GATE,
-  holdGate: DEFAULT_GATE,
-  isMintGateLocked: false,
-  isHoldGateLocked: false,
-  owner: DEFAULT_GATE,
-  pendingOwner: DEFAULT_GATE,
-  transferLockStart: 0n,
-  transferLockEnd: 0n,
-  transferLockEnabled: false,
+  owner: ZERO,
+  pendingOwner: ZERO,
+  mintConditionsLocked: false,
+  holdConditionsLocked: false,
+  mintExtensionCount: 0,
+  holdExtensionCount: 0,
 };
 
 // ─── Server data: token-level state (no user dependency) ───
@@ -110,7 +111,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
   const p = new ethers.JsonRpcProvider(chain.rpc);
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
 
-  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, mg, hg, mgf, hgf, own, po, tls, tle, tle2] = await Promise.all([
+  const [ts, im, md, isb, isTr, rev, fsc, tbc, iscf, own, po, mc, hc] = await Promise.all([
     c.totalSupply().catch(() => 0n),
     c.isMintable().catch(() => false),
     c.mintingDisabled().catch(() => false),
@@ -120,16 +121,16 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     c.flexibleSupplyCap().catch(() => 0n),
     c.tokenBalanceCap().catch(() => 0n),
     c.isSupplyCapLocked().catch(() => false),
-    c.mintGate().catch(() => DEFAULT_GATE),
-    c.holdGate().catch(() => DEFAULT_GATE),
-    c.isMintGateLocked().catch(() => false),
-    c.isHoldGateLocked().catch(() => false),
-    c.owner().catch(() => DEFAULT_GATE),
-    c.pendingOwner().catch(() => DEFAULT_GATE),
-    c.transferLockStart().catch(() => 0n),
-    c.transferLockEnd().catch(() => 0n),
-    c.transferLockEnabled().catch(() => false),
+    c.owner().catch(() => ZERO),
+    c.pendingOwner().catch(() => ZERO),
+    // getMintConditions() → [followTargetsCount, minBal, minFol, minFolCount, erc725yCount, tokenReqCount, followUseOr, erc725yUseOr, tokenReqsUseOr, useOr, locked, extensionCount]
+    c.getMintConditions().catch(() => [0n, 0n, 0n, 0n, 0n, 0n, false, false, false, false, false, 0n]),
+    // getHoldConditions() → same structure
+    c.getHoldConditions().catch(() => [0n, 0n, 0n, 0n, 0n, 0n, false, false, false, false, false, 0n]),
   ]);
+
+  const mintConds = mc as unknown[];
+  const holdConds = hc as unknown[];
 
   return {
     totalSupply: ts as bigint,
@@ -141,37 +142,19 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     revokable: !!rev,
     balanceCap: tbc as bigint,
     isSupplyCapLocked: !!iscf,
-    mintGate: ethers.getAddress(mg) as `0x${string}`,
-    holdGate: ethers.getAddress(hg) as `0x${string}`,
-    isMintGateLocked: !!mgf,
-    isHoldGateLocked: !!hgf,
     owner: ethers.getAddress(own) as `0x${string}`,
     pendingOwner: ethers.getAddress(po) as `0x${string}`,
-    transferLockStart: tls as bigint,
-    transferLockEnd: tle as bigint,
-    transferLockEnabled: !!tle2,
+    mintConditionsLocked: !!mintConds[10],
+    holdConditionsLocked: !!holdConds[10],
+    mintExtensionCount: Number(mintConds[11]),
+    holdExtensionCount: Number(holdConds[11]),
   };
 }
 
 // ─── Hook ────────────────────────────────────────────────
 
 /**
- * useTokenStatus — token + user data with 3-tier caching:
- *
- * TODO: 将来的に TokenConfig を受け取るのではなく、
- *       UP.getData(LSP12IssuedAssets[]) から動的にトークン一覧を取得する。
- *       現在は tokens.ts の静的リスト + オンチェーンデータのハイブリッド。
- *
- * 1. Server query (['token-server', proxy, chainId]):
- *    Token-level state — re-fetched only when token changes
- *
- * 2. Balance query (['token-balance', proxy, chainId, userAddress]):
- *    User-specific balance — re-fetched when userAddress changes
- *
- * 3. Gate query (['token-gate', mintGate, userAddress, chainId]):
- *    Gate permission check — depends on server data, re-enabled when user changes
- *
- * Result: wallet connect/disconnect does NOT re-fetch token-level data.
+ * useTokenStatus — token + user data with 3-tier caching
  */
 export function useTokenStatus(
   token: TokenConfig | null,
@@ -193,48 +176,45 @@ export function useTokenStatus(
   });
   const userBalance = balanceQuery.data ?? 0n;
 
-  // Tier 3: Gate permissions (depends on server mintGate + userAddress)
-  const gateQuery = useQuery({
-    queryKey: ['token-gate', server.mintGate, token?.chainId, userAddress],
-    queryFn: () => fetchGateCanMint(server.mintGate, userAddress!, token!.chainId),
-    enabled: !!token && !!userAddress && server.mintGate !== DEFAULT_GATE,
-  });
-  const canMintViaGate = server.mintGate === DEFAULT_GATE ? true : (gateQuery.data ?? false);
-
   // ─── Stable refetch — useCallback so it doesn't recreate on every isFetching toggle ───
   const refetch = useCallback(async () => {
     await Promise.all([
       serverQuery.refetch(),
       balanceQuery.refetch(),
-      gateQuery.refetch(),
     ]);
-  }, [serverQuery.refetch, balanceQuery.refetch, gateQuery.refetch]);
+  }, [serverQuery.refetch, balanceQuery.refetch]);
 
   // ─── Merge all tiers into single TokenStatus ───
   const merged: TokenStatus = useMemo(() => ({
     ...server,
+    // Legacy gate fields — always zero for new impl (no external gates)
+    mintGate: ZERO,
+    holdGate: ZERO,
+    isMintGateLocked: server.mintConditionsLocked,
+    isHoldGateLocked: server.holdConditionsLocked,
     userBalance,
     isFollowing: false,
+    // Transfer lock fields — not directly readable in new impl, default to false
+    transferLockStart: 0n,
+    transferLockEnd: 0n,
+    transferLockEnabled: false,
     canMint:
       server.isMintable &&
       !server.mintingDisabled &&
-      canMintViaGate &&
       (server.balanceCap === 0n || userBalance < server.balanceCap) &&
       (server.supplyCap === 0n || server.totalSupply < server.supplyCap),
     isLoading: serverQuery.isLoading,
-    isUserDataReady: !balanceQuery.isLoading && !gateQuery.isLoading,
+    isUserDataReady: !balanceQuery.isLoading,
     isFetching:
-      serverQuery.isFetching || balanceQuery.isFetching || gateQuery.isFetching,
+      serverQuery.isFetching || balanceQuery.isFetching,
     error:
       serverQuery.error?.message ??
       balanceQuery.error?.message ??
-      gateQuery.error?.message ??
       null,
     refetch,
-  }), [server, userBalance, canMintViaGate, serverQuery.isLoading, serverQuery.isFetching,
-      balanceQuery.isFetching, gateQuery.isLoading, gateQuery.isFetching,
-      balanceQuery.isLoading, serverQuery.error,
-      balanceQuery.error, gateQuery.error, refetch]);
+  }), [server, userBalance, serverQuery.isLoading, serverQuery.isFetching,
+      balanceQuery.isFetching, balanceQuery.isLoading, serverQuery.error,
+      balanceQuery.error, refetch]);
 
   return merged;
 }
@@ -248,22 +228,6 @@ async function fetchUserBalance(token: TokenConfig, userAddress: string): Promis
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
   const [bal] = await Promise.all([c.balanceOf(userAddress).catch(() => 0n)]);
   return bal as bigint;
-}
-
-async function fetchGateCanMint(
-  mintGate: string,
-  userAddress: string,
-  chainId: number
-): Promise<boolean> {
-  try {
-    const chain = CHAINS[chainId];
-    if (!chain) return false;
-    const p = new ethers.JsonRpcProvider(chain.rpc);
-    const gateContract = new ethers.Contract(mintGate, GATE_ABI, p);
-    return await gateContract.canMint(userAddress, userAddress, 1);
-  } catch {
-    return false;
-  }
 }
 
 // ─── Mint ────────────────────────────────────────────────

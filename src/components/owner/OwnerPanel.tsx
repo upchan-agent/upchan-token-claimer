@@ -127,9 +127,13 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
 
   const [capInput, setCapInput] = useState('');
   const [revokeAddr, setRevokeAddr] = useState('');
-  const [revokeAmount, setRevokeAmount] = useState('1');
+  const [revokeAmount, setRevokeAmount] = useState('');
   const [endDate, setEndDate] = useState('');
   const [transferAddr, setTransferAddr] = useState('');
+  const [mintExtAddr, setMintExtAddr] = useState('');
+  const [mintExtRemove, setMintExtRemove] = useState('');
+  const [holdExtAddr, setHoldExtAddr] = useState('');
+  const [holdExtRemove, setHoldExtRemove] = useState('');
 
   const handleToggle = (s: string) => {
     toggle(s);
@@ -144,7 +148,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
     : status.isMintable ? 'Minting Open'
     : 'Paused';
 
-  const hasHoldGate = status.holdGate !== '0x0000000000000000000000000000000000000000';
+  const hasHoldGate = status.holdExtensionCount > 0;
 
   if (!isOwner) {
     // 自分がpendingOwnerの場合、Acceptボタンを表示
@@ -268,126 +272,141 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
           )}
         </Section>
 
-        {/* Mint Gate */}
-        <Section label="Mint Gate" open={openSection === 'gate'} onToggle={() => handleToggle('gate')}>
+        {/* Mint Extensions */}
+        <Section label="Mint Extensions" open={openSection === 'ext'} onToggle={() => handleToggle('ext')}>
           <div className="data-row">
-            <span className="data-label">Active</span>
+            <span className="data-label">Extensions</span>
             <span className="data-value text-caption">
-              {findGate(chainId, status.mintGate)?.label || (
-                status.mintGate !== '0x0000000000000000000000000000000000000000'
-                  ? status.mintGate.slice(0, 10) + '...' + status.mintGate.slice(-6)
-                  : 'None'
-              )}
-              {status.isMintGateLocked && ' \uD83D\uDD12'}
+              {status.mintExtensionCount > 0 ? `${status.mintExtensionCount} active` : 'None'}
+              {status.mintConditionsLocked && ' 🔒'}
             </span>
           </div>
-          {!status.isMintGateLocked && (
-            <div className="owner-action-row">
-              <select
-                value={status.mintGate}
-                onChange={async (e) => {
-                  await actions.setMintGate(e.target.value);
-                  onDone();
-                }}
-                className="owner-input"
-                style={{ flex: 1, minWidth: 180 }}
-              >
-                {(GATES[chainId] || []).map(g => (
-                  <option key={g.id} value={g.address}>{g.label}</option>
-                ))}
-              </select>
-              <button
-                onClick={async () => {
-                  if (window.confirm('Lock Mint Gate?')) { await actions.lockMintGate(); onDone(); }
-                }}
-                disabled={actions.isPending}
-                className="btn btn-secondary btn-sm btn-danger"
-              >
-                Lock
-              </button>
-            </div>
-          )}
-          <GateEditor
-            gateAddress={status.mintGate}
-            chainId={chainId}
-            onDone={onDone}
-          />
-          {status.mintGate !== '0x0000000000000000000000000000000000000000' && (
-            <div className="owner-action-row" style={{ marginTop: 8 }}>
-              <button
-                onClick={async () => {
-                  if (!window.confirm('Lock conditions permanently? This cannot be undone!')) return;
-                  const iface = new ethers.Interface(['function lockConditions()']);
-                  const data = iface.encodeFunctionData('lockConditions');
-                  await sendTx('Lock Conditions', status.mintGate as `0x${string}`, data, chainId);
-                  onDone();
-                }}
-                className="btn btn-secondary btn-sm btn-danger"
-              >
-                Lock Conditions
-              </button>
-            </div>
+          {!status.mintConditionsLocked && (
+            <>
+              <div className="owner-action-row">
+                <input
+                  value={mintExtAddr}
+                  onChange={e => setMintExtAddr(e.target.value)}
+                  placeholder="Extension address 0x..."
+                  className="owner-input"
+                  style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!ethers.isAddress(mintExtAddr)) return;
+                    await actions.addMintExtension(mintExtAddr);
+                    setMintExtAddr('');
+                    onDone();
+                  }}
+                  disabled={actions.isPending || !ethers.isAddress(mintExtAddr)}
+                  className="btn btn-primary btn-sm"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="owner-action-row" style={{ marginTop: 4 }}>
+                <input
+                  value={mintExtRemove}
+                  onChange={e => setMintExtRemove(e.target.value)}
+                  placeholder="Address to remove..."
+                  className="owner-input"
+                  style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!ethers.isAddress(mintExtRemove)) return;
+                    await actions.removeMintExtension(mintExtRemove);
+                    setMintExtRemove('');
+                    onDone();
+                  }}
+                  disabled={actions.isPending || !ethers.isAddress(mintExtRemove)}
+                  className="btn btn-secondary btn-sm btn-danger"
+                >
+                  Remove
+                </button>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Lock mint conditions permanently?')) { await actions.lockMintConditions(); onDone(); }
+                  }}
+                  disabled={actions.isPending}
+                  className="btn btn-secondary btn-sm btn-danger"
+                  style={{ width: '100%' }}
+                >
+                  Lock Mint Conditions
+                </button>
+              </div>
+            </>
           )}
         </Section>
 
-        <Section label="Hold Gate" open={openSection === 'hold'} onToggle={() => handleToggle('hold')}>
+        {/* Hold Extensions */}
+        <Section label="Hold Extensions" open={openSection === 'hold'} onToggle={() => handleToggle('hold')}>
           <div className="data-row">
-            <span className="data-label">Active</span>
+            <span className="data-label">Extensions</span>
             <span className="data-value text-caption">
-              {findGate(chainId, status.holdGate)?.label || (
-                status.holdGate !== '0x0000000000000000000000000000000000000000'
-                  ? status.holdGate.slice(0, 10) + '...' + status.holdGate.slice(-6)
-                  : 'None'
-              )}
-              {status.isHoldGateLocked && ' 🔒'}
+              {status.holdExtensionCount > 0 ? `${status.holdExtensionCount} active` : 'None'}
+              {status.holdConditionsLocked && ' 🔒'}
             </span>
           </div>
-          {!status.isHoldGateLocked && (
-            <div className="owner-action-row">
-              <select
-                value={status.holdGate}
-                onChange={async (e) => {
-                  await actions.setHoldGate(e.target.value);
-                  onDone();
-                }}
-                className="owner-input"
-                style={{ flex: 1, minWidth: 180 }}
-              >
-                {(GATES[chainId] || []).map(g => (
-                  <option key={g.id} value={g.address}>{g.label}</option>
-                ))}
-              </select>
-              <button
-                onClick={async () => {
-                  if (window.confirm('Lock Hold Gate?')) { await actions.lockHoldGate(); onDone(); }
-                }}
-                disabled={actions.isPending}
-                className="btn btn-secondary btn-sm btn-danger"
-              >
-                Lock
-              </button>
-            </div>
-          )}
-          <GateEditor
-            gateAddress={status.holdGate}
-            chainId={chainId}
-            onDone={onDone}
-          />
-          {status.holdGate !== '0x0000000000000000000000000000000000000000' && (
-            <div className="owner-action-row" style={{ marginTop: 8 }}>
-              <button
-                onClick={async () => {
-                  if (!window.confirm('Lock conditions permanently? This cannot be undone!')) return;
-                  const iface = new ethers.Interface(['function lockConditions()']);
-                  const data = iface.encodeFunctionData('lockConditions');
-                  await sendTx('Lock Conditions', status.holdGate as `0x${string}`, data, chainId);
-                  onDone();
-                }}
-                className="btn btn-secondary btn-sm btn-danger"
-              >
-                Lock Conditions
-              </button>
-            </div>
+          {!status.holdConditionsLocked && (
+            <>
+              <div className="owner-action-row">
+                <input
+                  value={holdExtAddr}
+                  onChange={e => setHoldExtAddr(e.target.value)}
+                  placeholder="Extension address 0x..."
+                  className="owner-input"
+                  style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!ethers.isAddress(holdExtAddr)) return;
+                    await actions.addHoldExtension(holdExtAddr);
+                    setHoldExtAddr('');
+                    onDone();
+                  }}
+                  disabled={actions.isPending || !ethers.isAddress(holdExtAddr)}
+                  className="btn btn-primary btn-sm"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="owner-action-row" style={{ marginTop: 4 }}>
+                <input
+                  value={holdExtRemove}
+                  onChange={e => setHoldExtRemove(e.target.value)}
+                  placeholder="Address to remove..."
+                  className="owner-input"
+                  style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+                />
+                <button
+                  onClick={async () => {
+                    if (!ethers.isAddress(holdExtRemove)) return;
+                    await actions.removeHoldExtension(holdExtRemove);
+                    setHoldExtRemove('');
+                    onDone();
+                  }}
+                  disabled={actions.isPending || !ethers.isAddress(holdExtRemove)}
+                  className="btn btn-secondary btn-sm btn-danger"
+                >
+                  Remove
+                </button>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Lock hold conditions permanently?')) { await actions.lockHoldConditions(); onDone(); }
+                  }}
+                  disabled={actions.isPending}
+                  className="btn btn-secondary btn-sm btn-danger"
+                  style={{ width: '100%' }}
+                >
+                  Lock Hold Conditions
+                </button>
+              </div>
+            </>
           )}
         </Section>
 

@@ -10,10 +10,19 @@ const ABI = [
   'function permanentlyDisableMinting()',
   'function updateSupplyCap(uint256)',
   'function lockSupplyCap()',
+  // Gate management (legacy — external gate contracts)
   'function setMintGate(address)',
   'function lockMintGate()',
   'function setHoldGate(address)',
   'function lockHoldGate()',
+  // Extension management (new ICondition extension system)
+  'function addMintExtension(address)',
+  'function removeMintExtension(address)',
+  'function addHoldExtension(address)',
+  'function removeHoldExtension(address)',
+  'function lockMintConditions()',
+  'function lockHoldConditions()',
+  // Revoke
   'function revokeByGate(address)',
   'function setData(bytes32, bytes)',
   'function makeTransferable()',
@@ -59,11 +68,19 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
   const updateSupplyCap = useCallback((cap: bigint) => a('updateSupplyCap', 'Update Supply Cap', [cap])(), [a]);
   const lockSupplyCap = useCallback(() => a('lockSupplyCap', 'Fix Supply Cap', [])(), [a]);
 
-  // ─── Gate Management ───
+  // ─── Gate Management (legacy) ───
   const setMintGate = useCallback((addr: string) => a('setMintGate', 'Set Mint Gate', [addr])(), [a]);
   const lockMintGate = useCallback(() => a('lockMintGate', 'Fix Mint Gate', [])(), [a]);
   const setHoldGate = useCallback((addr: string) => a('setHoldGate', 'Set Hold Gate', [addr])(), [a]);
   const lockHoldGate = useCallback(() => a('lockHoldGate', 'Fix Hold Gate', [])(), [a]);
+
+  // ─── Extension Management (new) ───
+  const addMintExtension = useCallback((addr: string) => a('addMintExtension', 'Add Mint Extension', [addr])(), [a]);
+  const removeMintExtension = useCallback((addr: string) => a('removeMintExtension', 'Remove Mint Extension', [addr])(), [a]);
+  const addHoldExtension = useCallback((addr: string) => a('addHoldExtension', 'Add Hold Extension', [addr])(), [a]);
+  const removeHoldExtension = useCallback((addr: string) => a('removeHoldExtension', 'Remove Hold Extension', [addr])(), [a]);
+  const lockMintConditions = useCallback(() => a('lockMintConditions', 'Lock Mint Conditions', [])(), [a]);
+  const lockHoldConditions = useCallback(() => a('lockHoldConditions', 'Lock Hold Conditions', [])(), [a]);
 
   // ─── Revoke ───
   const revokeByGate = useCallback(
@@ -113,10 +130,18 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     permanentlyDisableMinting,
     updateSupplyCap,
     lockSupplyCap,
+    // Gate (legacy)
     setMintGate,
     lockMintGate,
     setHoldGate,
     lockHoldGate,
+    // Extensions (new)
+    addMintExtension,
+    removeMintExtension,
+    addHoldExtension,
+    removeHoldExtension,
+    lockMintConditions,
+    lockHoldConditions,
     revokeByGate,
     setTokenName,
     setTokenSymbol,

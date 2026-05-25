@@ -85,7 +85,7 @@ export function StatusCard({ token, status, chain }: Props) {
       value: load ? 'none' : (status.revokable ? 'yes' : 'no'),
       display: load ? '-' : (
         !status.revokable ? 'No'
-        : status.holdGate !== '0x0000000000000000000000000000000000000000' ? 'Yes'
+        : status.holdExtensionCount > 0 ? 'Yes'
         : 'Yes (no Hold Gate)'
       ),
     },
@@ -178,48 +178,34 @@ export function StatusCard({ token, status, chain }: Props) {
           </div>
         ))}
 
-        {/* Mint Gate */}
+        {/* Mint Conditions */}
         <div className="data-row">
-          <span className="data-label">Mint Gate</span>
-          {load || status.mintGate === '0x0000000000000000000000000000000000000000' ? (
-            <>
-              <StatusIcon value="none" />
-              <span className="data-value">-</span>
-            </>
+          <span className="data-label">Mint Conditions</span>
+          {load ? (
+            <><StatusIcon value="none" /><span className="data-value">-</span></>
           ) : (
             <>
-              <StatusIcon value="yes" />
-              <a
-                href={`${chain.explorer}/address/${status.mintGate}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="data-value link"
-              >
-                {status.mintGate.slice(0, 10)}…{status.mintGate.slice(-4)}{status.isMintGateLocked ? ' 🔒' : ''} ↗
-              </a>
+              <StatusIcon value={status.mintConditionsLocked ? 'yes' : 'none'} />
+              <span className="data-value">
+                {status.mintConditionsLocked ? 'Locked 🔒' : 'Flexible'}
+                {status.mintExtensionCount > 0 && ` · ${status.mintExtensionCount} ext`}
+              </span>
             </>
           )}
         </div>
 
-        {/* Hold Gate */}
+        {/* Hold Conditions */}
         <div className="data-row">
-          <span className="data-label">Hold Gate</span>
-          {load || status.holdGate === '0x0000000000000000000000000000000000000000' ? (
-            <>
-              <StatusIcon value="none" />
-              <span className="data-value">-</span>
-            </>
+          <span className="data-label">Hold Conditions</span>
+          {load ? (
+            <><StatusIcon value="none" /><span className="data-value">-</span></>
           ) : (
             <>
-              <StatusIcon value="yes" />
-              <a
-                href={`${chain.explorer}/address/${status.holdGate}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="data-value link"
-              >
-                {status.holdGate.slice(0, 10)}…{status.holdGate.slice(-4)}{status.isHoldGateLocked ? ' 🔒' : ''} ↗
-              </a>
+              <StatusIcon value={status.holdConditionsLocked ? 'yes' : 'none'} />
+              <span className="data-value">
+                {status.holdConditionsLocked ? 'Locked 🔒' : 'Flexible'}
+                {status.holdExtensionCount > 0 && ` · ${status.holdExtensionCount} ext`}
+              </span>
             </>
           )}
         </div>

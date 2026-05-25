@@ -22,8 +22,8 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
   const { burn, isPending: burnPending } = useBurn(token, addr, onRefetch);
 
   // ─── Derived state ───
-  const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
-  const hasHoldGate = status.holdGate !== '0x0000000000000000000000000000000000000000';
+  const hasMintGate = status.mintExtensionCount > 0;
+  const hasHoldGate = status.holdExtensionCount > 0;
   const isAtMaxBalance = status.balanceCap > 0n && status.userBalance >= status.balanceCap;
   const hasTokens = status.userBalance > 0n;
   const userBal = Number(status.userBalance);

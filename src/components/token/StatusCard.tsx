@@ -25,6 +25,16 @@ function fmtSoulbound(s: TokenStatus): string {
   return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
 }
 
+function fmtRevokable(s: TokenStatus): string {
+  if (!s.revokable) return 'No';
+  return s.holdExtensionCount > 0 ? 'By Hold Gates 🛡' : 'No Gate 🔓';
+}
+
+function fmtLockStatus(locked: boolean, ruleCount = 0): string {
+  const base = locked ? 'Fixed 🔏' : 'Editable 📝';
+  return ruleCount > 0 ? `${base} ${ruleCount} Rules` : base;
+}
+
 interface Props {
   token: TokenConfig;
   status: TokenStatus;
@@ -98,9 +108,7 @@ export function StatusCard({ token, status, chain }: Props) {
     {
       label: 'Revokable',
       value: status.revokable ? 'yes' : 'no',
-      display: !status.revokable ? 'No'
-        : status.holdExtensionCount > 0 ? 'Yes'
-        : 'Yes (no hold ext)',
+      display: fmtRevokable(status),
     },
     {
       label: 'Balance Cap',
@@ -110,7 +118,7 @@ export function StatusCard({ token, status, chain }: Props) {
     {
       label: 'Cap Status',
       value: status.isSupplyCapLocked ? 'yes' : 'none',
-      display: status.isSupplyCapLocked ? 'Locked 🔒' : 'Flexible',
+      display: fmtLockStatus(status.isSupplyCapLocked),
     },
   ];
 
@@ -203,8 +211,7 @@ export function StatusCard({ token, status, chain }: Props) {
             <StatusIcon value={status.mintConditionsLocked ? 'yes' : 'none'} />
           </span>
             <span className="data-value value-fade" style={fade(contentReady)}>
-              {status.mintConditionsLocked ? 'Locked 🔒' : 'Flexible'}
-              {status.mintExtensionCount > 0 && ` · ${status.mintExtensionCount} ext`}
+              {fmtLockStatus(status.mintConditionsLocked, status.mintExtensionCount)}
             </span>
           </div>
 
@@ -215,8 +222,7 @@ export function StatusCard({ token, status, chain }: Props) {
             <StatusIcon value={status.holdConditionsLocked ? 'yes' : 'none'} />
           </span>
             <span className="data-value value-fade" style={fade(contentReady)}>
-              {status.holdConditionsLocked ? 'Locked 🔒' : 'Flexible'}
-              {status.holdExtensionCount > 0 && ` · ${status.holdExtensionCount} ext`}
+              {fmtLockStatus(status.holdConditionsLocked, status.holdExtensionCount)}
             </span>
         </div>
       </div>

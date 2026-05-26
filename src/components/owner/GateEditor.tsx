@@ -28,7 +28,7 @@ export function GateEditor({ gateAddress, chainId, onDone }: Props) {
   const [minFol, setMinFol] = useState('0');
   const [minLyx, setMinLyx] = useState('0');
   const [useOr, setUseOr] = useState(false);
-  const [tokenReqs, setTokenReqs] = useState<{ token: string; amount: number }[]>([]);
+  const [tokenReqs, setTokenReqs] = useState<{ token: string; amount: string }[]>([]);
   const [newTokenAddr, setNewTokenAddr] = useState('');
   const [newTokenAmt, setNewTokenAmt] = useState('1');
 
@@ -60,7 +60,7 @@ export function GateEditor({ gateAddress, chainId, onDone }: Props) {
       setFollowAddr(s.followTarget);
       setFollowName('');
       setMinFol(String(s.minFollowers));
-      setMinLyx((BigInt(s.minNativeBalance) / BigInt(10) ** BigInt(18)).toString());
+      setMinLyx(ethers.formatEther(s.minNativeBalance));
       setUseOr(s.useOr);
       setTokenReqs(s.tokenReqs.map(t => ({ token: t.token, amount: t.minAmount })));
     } catch {
@@ -78,7 +78,7 @@ export function GateEditor({ gateAddress, chainId, onDone }: Props) {
     setError(null);
     setSaving(true);
     try {
-      const lyxWei = minLyx ? (BigInt(Math.round(Number(minLyx) * 1e18))).toString() : '0';
+      const lyxWei = ethers.parseEther(minLyx || '0').toString();
       await rg.setAll(followAddr, lyxWei, Number(minFol) || 0, tokenReqs, useOr);
       await refresh();
       onDone();
@@ -156,7 +156,7 @@ export function GateEditor({ gateAddress, chainId, onDone }: Props) {
           min={0}
           className="owner-input"
           style={{ width: 120 }}
-          placeholder="wei"
+          placeholder="LYX"
         />
       </div>
 
@@ -193,7 +193,7 @@ export function GateEditor({ gateAddress, chainId, onDone }: Props) {
         <button
           onClick={() => {
             if (!newTokenAddr) return;
-            setTokenReqs(reqs => [...reqs, { token: newTokenAddr, amount: Number(newTokenAmt) || 1 }]);
+            setTokenReqs(reqs => [...reqs, { token: newTokenAddr, amount: newTokenAmt.trim() || '1' }]);
             setNewTokenAddr('');
             setNewTokenAmt('1');
           }}

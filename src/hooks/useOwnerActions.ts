@@ -26,6 +26,7 @@ const ABI = [
   'function revokeByGate(address)',
   'function setData(bytes32, bytes)',
   'function makeTransferable()',
+  'function updateTransferLockPeriod(uint256,uint256)',
   'function renounceOwnership()',
   'function transferOwnership(address)',
   'function acceptOwnership()',

@@ -67,21 +67,36 @@ export const TOKENS: TokenConfig[] = [
 ];
 
 // ─── Chains ───
-export const CHAINS: Record<number, { name: string; rpc: string; explorer: string }> = {
+export interface ChainConfig {
+  name: string;
+  rpc: string;
+  explorer: string;
+  lsp26: `0x${string}`;
+}
+
+const LSP26_REGISTRY = '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA' as const;
+
+export const CHAINS: Record<number, ChainConfig> = {
   4201: {
     name: 'LUKSO Testnet',
     rpc: 'https://4201.rpc.thirdweb.com/f20713774ede91090d43daf75243e8ca',
     explorer: 'https://explorer.execution.testnet.lukso.network',
+    lsp26: LSP26_REGISTRY,
   },
   42: {
     name: 'LUKSO',
     rpc: 'https://42.rpc.thirdweb.com/f20713774ede91090d43daf75243e8ca',
     explorer: 'https://explorer.execution.mainnet.lukso.network',
+    lsp26: LSP26_REGISTRY,
   },
 };
 
 // ─── Constants ───
-export const LSP26_ADDRESS = '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA';
+export function lsp26Address(chainId: number): `0x${string}` {
+  const chain = CHAINS[chainId];
+  if (!chain) throw new Error('Unsupported chain');
+  return chain.lsp26;
+}
 
 export const UP_ABI = [
   'function execute(uint256 operation, address target, uint256 value, bytes data) payable returns (bytes)',

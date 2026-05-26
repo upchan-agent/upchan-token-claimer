@@ -127,7 +127,6 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
 
   const [capInput, setCapInput] = useState('');
   const [revokeAddr, setRevokeAddr] = useState('');
-  const [revokeAmount, setRevokeAmount] = useState('');
   const [endDate, setEndDate] = useState('');
   const [transferAddr, setTransferAddr] = useState('');
   const [mintExtAddr, setMintExtAddr] = useState('');
@@ -138,7 +137,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
   const handleToggle = (s: string) => {
     toggle(s);
     if (s === 'supply') setCapInput(String(status.supplyCap));
-    if (s === 'revoke') { setRevokeAddr(''); setRevokeAmount('1'); }
+    if (s === 'revoke') setRevokeAddr('');
   };
 
   const statusPill = status.mintingDisabled ? 'status-pill--closed'
@@ -148,7 +147,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
     : status.isMintable ? 'Minting Open'
     : 'Paused';
 
-  const hasHoldGate = status.holdExtensionCount > 0;
+  const hasHoldConditions = status.holdRuleCount > 0;
 
   if (!isOwner) {
     // 自分がpendingOwnerの場合、Acceptボタンを表示
@@ -428,20 +427,12 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   />
                 </span>
               </div>
-              <div className="data-row">
-                <span className="data-label">Amount</span>
-                <span className="data-value" style={{ justifyContent: 'flex-start' }}>
-                  <input
-                    type="number"
-                    value={revokeAmount}
-                    onChange={e => setRevokeAmount(e.target.value)}
-                    min={1}
-                    className="owner-input"
-                    style={{ width: 70 }}
-                  />
-                </span>
-              </div>
-              {hasHoldGate && (
+              {hasHoldConditions && (
+                <p className="text-caption" style={{ color: 'var(--c-text-tertiary)', marginTop: 8 }}>
+                  Revokes the target holder's full balance only if hold conditions are unmet.
+                </p>
+              )}
+              {hasHoldConditions && (
                 <button
                   onClick={async () => {
                     if (!revokeAddr || !ethers.isAddress(revokeAddr)) return;
@@ -456,9 +447,9 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
                   Revoke by Gate
                 </button>
               )}
-              {!hasHoldGate && (
+              {!hasHoldConditions && (
                 <p className="text-caption" style={{ color: 'var(--c-text-tertiary)', marginTop: 8 }}>
-                  No Hold Gate configured.
+                  No hold conditions configured. `revokeByGate` would revert until at least one hold rule exists.
                 </p>
               )}
             </>

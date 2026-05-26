@@ -76,10 +76,12 @@ export function TxProvider({ children }: { children: ReactNode }) {
       setRecords(prev => prev.map(r => r.id === id ? { ...r, txHash } : r));
 
       const chain = CHAINS[chainId];
-      if (chain) {
-        const p = new ethers.JsonRpcProvider(chain.rpc);
-        await p.waitForTransaction(txHash, 1, 60_000);
-      }
+      if (!chain) throw new Error('Unsupported chain');
+
+      const p = new ethers.JsonRpcProvider(chain.rpc);
+      const receipt = await p.waitForTransaction(txHash, 1, 60_000);
+      if (!receipt) throw new Error('Transaction confirmation timed out');
+      if (receipt.status !== 1) throw new Error('Transaction reverted');
 
       setRecords(prev => prev.map(r => r.id === id ? { ...r, status: 'confirmed' } : r));
       return txHash;

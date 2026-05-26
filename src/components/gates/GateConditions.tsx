@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { CHAINS, GATE_ABI, assetUrl, profileUrl } from '@/config/tokens';
+import { CHAINS, GATE_ABI, assetUrl, profileUrl, lsp26Address } from '@/config/tokens';
 import { YesIcon, NoIcon, DashIcon } from '@/components/Icons';
 
 interface Props {
@@ -94,15 +94,45 @@ async function fetchAssetSymbol(address: string, chainId: number): Promise<strin
 const DEFAULTS_FOLLOW = [
   { label: 'Follow', passed: null, inactive: true },
   { label: '\u2265 0 LYX', passed: null, inactive: true },
+  { label: '\u2265 0 Following', passed: null, inactive: true },
   { label: '\u2265 0 Followers', passed: null, inactive: true },
 ];
 
 const LOADING_ROWS: Row[] = [
   { label: 'Follow', passed: null, inactive: true },
   { label: '\u2265 0 LYX', passed: null, inactive: true },
+  { label: '\u2265 0 Following', passed: null, inactive: true },
   { label: '\u2265 0 Followers', passed: null, inactive: true },
   { label: 'Token', passed: null, inactive: true },
 ];
+
+const LSP26_IFACE = new ethers.Interface([
+  'function isFollowing(address,address) view returns (bool)',
+  'function followerCount(address) view returns (uint256)',
+  'function followingCount(address) view returns (uint256)',
+]);
+
+async function readIsFollowing(
+  provider: ethers.JsonRpcProvider,
+  chainId: number,
+  follower: string,
+  target: string,
+): Promise<boolean> {
+  const data = LSP26_IFACE.encodeFunctionData('isFollowing', [follower, target]);
+  const result = await provider.call({ to: lsp26Address(chainId), data });
+  return LSP26_IFACE.decodeFunctionResult('isFollowing', result)[0] as boolean;
+}
+
+async function readFollowCount(
+  provider: ethers.JsonRpcProvider,
+  chainId: number,
+  fn: 'followerCount' | 'followingCount',
+  address: string,
+): Promise<bigint> {
+  const data = LSP26_IFACE.encodeFunctionData(fn, [address]);
+  const result = await provider.call({ to: lsp26Address(chainId), data });
+  return LSP26_IFACE.decodeFunctionResult(fn, result)[0] as bigint;
+}
 
 const TOKEN_CONDS_ABI = [
   'function getMintConditions() view returns (uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool,bool,uint256)',
@@ -133,7 +163,7 @@ async function buildRowsFromToken(
   const conds = await (mode === 'mint' ? token.getMintConditions() : token.getHoldConditions()).catch(
     () => [0n, 0n, 0n, 0n, 0n, 0n, false, false, false, false, false, 0n],
   );
-  const [ftCount, minBal, minFol, minFolCount, , tReqCount] = conds as bigint[];
+  const [ftCount, minBal, minFollowing, minFollowers, , tReqCount] = conds as bigint[];
 
   // Fetch follow target
   const followTargetFn = mode === 'mint' ? 'mintFollowTarget' : 'holdFollowTarget';
@@ -154,7 +184,7 @@ async function buildRowsFromToken(
     } catch { break; }
   }
 
-  const hasConfigData = followAddr !== ZERO || Number(minBal) > 0n || Number(minFol) > 0n || tReqs.length > 0;
+  const hasConfigData = followAddr !== ZERO || minBal > 0n || minFollowing > 0n || minFollowers > 0n || tReqs.length > 0;
   const rows: Row[] = [];
   let followInfo: { addr: `0x${string}`; name: string } | null = null;
   let isFollowing = false;
@@ -169,10 +199,7 @@ async function buildRowsFromToken(
     let fOk = false;
     if (!noUser) {
       try {
-        const iface = new ethers.Interface(['function isFollowing(address,address) view returns (bool)']);
-        const data = iface.encodeFunctionData('isFollowing', [userAddress, followAddr]);
-        const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
-        fOk = iface.decodeFunctionResult('isFollowing', r)[0];
+        fOk = await readIsFollowing(p, chainId, userAddress, followAddr);
       } catch {}
     }
     followInfo = { addr: followAddr as `0x${string}`, name };
@@ -202,20 +229,33 @@ async function buildRowsFromToken(
     rows.push({ label: '\u2265 0 LYX', passed: null, inactive: true });
   }
 
-  // ─── Followers ───
-  const minFolNum = minFol as bigint;
-  if (minFolNum > 0n) {
+  // ─── Following ───
+  const minFollowingNum = minFollowing as bigint;
+  if (minFollowingNum > 0n) {
     if (noUser) {
-      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: null });
+      rows.push({ label: `\u2265 ${minFollowingNum} Following`, passed: null });
     } else {
-      let count = BigInt(0);
+      let count = 0n;
       try {
-        const iface = new ethers.Interface(['function totalFollowersOf(address) view returns (uint256)']);
-        const data = iface.encodeFunctionData('totalFollowersOf', [userAddress]);
-        const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
-        count = iface.decodeFunctionResult('totalFollowersOf', r)[0] as bigint;
+        count = await readFollowCount(p, chainId, 'followingCount', userAddress);
       } catch {}
-      rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: count >= minFolNum });
+      rows.push({ label: `\u2265 ${minFollowingNum} Following`, passed: count >= minFollowingNum });
+    }
+  } else {
+    rows.push({ label: '\u2265 0 Following', passed: null, inactive: true });
+  }
+
+  // ─── Followers ───
+  const minFollowersNum = minFollowers as bigint;
+  if (minFollowersNum > 0n) {
+    if (noUser) {
+      rows.push({ label: `\u2265 ${minFollowersNum} Followers`, passed: null });
+    } else {
+      let count = 0n;
+      try {
+        count = await readFollowCount(p, chainId, 'followerCount', userAddress);
+      } catch {}
+      rows.push({ label: `\u2265 ${minFollowersNum} Followers`, passed: count >= minFollowersNum });
     }
   } else {
     rows.push({ label: '\u2265 0 Followers', passed: null, inactive: true });
@@ -310,10 +350,7 @@ async function buildRowsFromGate(
     let fOk = false;
     if (!noUser) {
       try {
-        const iface = new ethers.Interface(['function isFollowing(address,address) view returns (bool)']);
-        const data = iface.encodeFunctionData('isFollowing', [userAddress, followAddr]);
-        const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
-        fOk = iface.decodeFunctionResult('isFollowing', r)[0];
+        fOk = await readIsFollowing(p, chainId, userAddress, followAddr);
       } catch {}
     }
     followInfo = { addr: followAddr as `0x${string}`, name };
@@ -340,16 +377,15 @@ async function buildRowsFromGate(
     rows.push({ label: '\u2265 0 LYX', passed: null, inactive: true });
   }
 
+  rows.push({ label: '\u2265 0 Following', passed: null, inactive: true });
+
   if (minFolNum > 0n) {
     if (noUser) {
       rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: null });
     } else {
-      let count = BigInt(0);
+      let count = 0n;
       try {
-        const iface = new ethers.Interface(['function totalFollowersOf(address) view returns (uint256)']);
-        const data = iface.encodeFunctionData('totalFollowersOf', [userAddress]);
-        const r = await p.call({ to: '0xf01103E5a9909Fc0DBe8166dA7085e0285daDDcA', data });
-        count = iface.decodeFunctionResult('totalFollowersOf', r)[0] as bigint;
+        count = await readFollowCount(p, chainId, 'followerCount', userAddress);
       } catch {}
       rows.push({ label: `\u2265 ${minFolNum} Followers`, passed: count >= minFolNum });
     }

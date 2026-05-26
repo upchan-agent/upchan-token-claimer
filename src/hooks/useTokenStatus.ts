@@ -3,8 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ethers } from 'ethers';
-import { TokenConfig, LSP26_ADDRESS, GATE_ABI, UP_ABI, CHAINS } from '@/config/tokens';
-import { EIP1193Provider } from '../providers/UpProvider';
+import { TokenConfig, lsp26Address, CHAINS } from '@/config/tokens';
 import { useTxContext } from '../providers/TxContext';
 
 export interface TokenStatus {
@@ -40,6 +39,10 @@ export interface TokenStatus {
   mintExtensionCount: number;
   /** Number of hold extension contracts */
   holdExtensionCount: number;
+  /** Number of active mint condition rule groups */
+  mintRuleCount: number;
+  /** Number of active hold condition rule groups */
+  holdRuleCount: number;
   canMint: boolean;
   isLoading: boolean;
   isUserDataReady: boolean;
@@ -64,6 +67,8 @@ interface ServerData {
   holdConditionsLocked: boolean;
   mintExtensionCount: number;
   holdExtensionCount: number;
+  mintRuleCount: number;
+  holdRuleCount: number;
 }
 
 const ZERO = '0x0000000000000000000000000000000000000000' as const;
@@ -101,7 +106,17 @@ const SERVER_DEFAULTS: ServerData = {
   holdConditionsLocked: false,
   mintExtensionCount: 0,
   holdExtensionCount: 0,
+  mintRuleCount: 0,
+  holdRuleCount: 0,
 };
+
+function countConditionRules(conds: unknown[]): number {
+  const countIndexes = [0, 1, 2, 3, 4, 5, 11];
+  return countIndexes.reduce((total, index) => {
+    const value = conds[index];
+    return total + (typeof value === 'bigint' && value > 0n ? 1 : 0);
+  }, 0);
+}
 
 // ─── Server data: token-level state (no user dependency) ───
 
@@ -123,7 +138,7 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     c.isSupplyCapLocked().catch(() => false),
     c.owner().catch(() => ZERO),
     c.pendingOwner().catch(() => ZERO),
-    // getMintConditions() → [followTargetsCount, minBal, minFol, minFolCount, erc725yCount, tokenReqCount, followUseOr, erc725yUseOr, tokenReqsUseOr, useOr, locked, extensionCount]
+    // getMintConditions() → [followTargetsCount, minBalance, minFollowing, minFollowers, erc725yCount, tokenReqCount, followUseOr, erc725yUseOr, tokenReqsUseOr, useOr, locked, extensionCount]
     c.getMintConditions().catch(() => [0n, 0n, 0n, 0n, 0n, 0n, false, false, false, false, false, 0n]),
     // getHoldConditions() → same structure
     c.getHoldConditions().catch(() => [0n, 0n, 0n, 0n, 0n, 0n, false, false, false, false, false, 0n]),
@@ -148,13 +163,15 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     holdConditionsLocked: !!holdConds[10],
     mintExtensionCount: Number(mintConds[11]),
     holdExtensionCount: Number(holdConds[11]),
+    mintRuleCount: countConditionRules(mintConds),
+    holdRuleCount: countConditionRules(holdConds),
   };
 }
 
 // ─── Hook ────────────────────────────────────────────────
 
 /**
- * useTokenStatus — token + user data with 3-tier caching
+ * useTokenStatus — token-level server data + user balance cache
  */
 export function useTokenStatus(
   token: TokenConfig | null,
@@ -311,7 +328,7 @@ export function useFollow(
     try {
       const regIface = new ethers.Interface(['function follow(address addr) external']);
       const innerData = regIface.encodeFunctionData('follow', [targetProfile]);
-      await sendTx('Following Profile', LSP26_ADDRESS, innerData, chainId);
+      await sendTx('Following Profile', lsp26Address(chainId), innerData, chainId);
       onDone?.();
     } catch {
       // sendTx writes failure to global TxContext

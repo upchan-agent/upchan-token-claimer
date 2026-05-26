@@ -2,7 +2,7 @@
 
 import { ethers } from 'ethers';
 import { useMint, useBurn, TokenStatus } from '@/hooks/useTokenStatus';
-import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
+import { TokenConfig, lsp26Address } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
 import { GateConditions } from './gates/GateConditions';
 import { useTxContext } from '@/providers/TxContext';
@@ -23,8 +23,7 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
 
   // ─── Derived state ───
   const allDataReady = !status.isLoading && status.isUserDataReady;
-  const hasMintGate = status.mintExtensionCount > 0;
-  const hasHoldGate = status.holdExtensionCount > 0;
+  const hasHoldConditions = status.holdRuleCount > 0;
   const isAtMaxBalance = status.balanceCap > 0n && status.userBalance >= status.balanceCap;
   const hasTokens = status.userBalance > 0n;
   const userBal = Number(status.userBalance);
@@ -80,7 +79,7 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
             label="Mint"
             onFollow={async (target: `0x${string}`) => {
               const iface = new ethers.Interface(['function follow(address addr) external']);
-              await sendTx('Follow Profile', LSP26_ADDRESS, iface.encodeFunctionData('follow', [target]), token.chainId);
+              await sendTx('Follow Profile', lsp26Address(token.chainId), iface.encodeFunctionData('follow', [target]), token.chainId);
               onRefetch();
             }}
           />
@@ -93,14 +92,14 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
             label="Hold"
             onFollow={async (target: `0x${string}`) => {
               const iface = new ethers.Interface(['function follow(address addr) external']);
-              await sendTx('Follow Profile', LSP26_ADDRESS, iface.encodeFunctionData('follow', [target]), token.chainId);
+              await sendTx('Follow Profile', lsp26Address(token.chainId), iface.encodeFunctionData('follow', [target]), token.chainId);
               onRefetch();
             }}
           />
         </div>
-        {hasHoldGate && status.revokable && (
+        {hasHoldConditions && status.revokable && (
           <p className="revoke-warning">
-            {'\u26A0\uFE0F'} Revokable Token — Owner can revoke if hold conditions unmet
+            {'\u26A0\uFE0F'} Revokable Token — Owner can revoke if Hold Conditions are unmet
           </p>
         )}
       </div>

@@ -27,7 +27,7 @@ function fmtSoulbound(s: TokenStatus): string {
 
 function fmtRevokable(s: TokenStatus): string {
   if (!s.revokable) return 'No';
-  return s.holdExtensionCount > 0 ? 'Yes (By Hold Gates) 🛡' : 'Yes (No Hold Gates) 🔓';
+  return s.holdExtensionCount > 0 ? 'By Hold Gates 🛡' : 'No Gate 🔓';
 }
 
 function fmtLockStatus(locked: boolean, ruleCount = 0): string {

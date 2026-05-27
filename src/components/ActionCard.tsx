@@ -2,7 +2,7 @@
 
 import { ethers } from 'ethers';
 import { useMint, useBurn, TokenStatus } from '@/hooks/useTokenStatus';
-import { TokenConfig, LSP26_ADDRESS } from '@/config/tokens';
+import { TokenConfig, lsp26Address } from '@/config/tokens';
 import { EmojiText } from './EmojiText';
 import { GateConditions } from './gates/GateConditions';
 import { useTxContext } from '@/providers/TxContext';
@@ -22,8 +22,8 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
   const { burn, isPending: burnPending } = useBurn(token, addr, onRefetch);
 
   // ─── Derived state ───
-  const hasMintGate = status.mintGate !== '0x0000000000000000000000000000000000000000';
-  const hasHoldGate = status.holdGate !== '0x0000000000000000000000000000000000000000';
+  const allDataReady = !status.isLoading && status.isUserDataReady;
+  const hasHoldConditions = status.holdRuleCount > 0;
   const isAtMaxBalance = status.balanceCap > 0n && status.userBalance >= status.balanceCap;
   const hasTokens = status.userBalance > 0n;
   const userBal = Number(status.userBalance);
@@ -31,7 +31,7 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
   const isSoldOut = status.supplyCap > 0n && status.totalSupply >= status.supplyCap;
 
   // ─── Mint button ───
-  const mintDisabled = !displayAddress || mintPending || !status.canMint;
+  const mintDisabled = !displayAddress || mintPending || !allDataReady || (allDataReady && !status.canMint);
   const mintLabel = !displayAddress
     ? 'Mint NFT'
     : mintPending
@@ -47,7 +47,7 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
               : 'Mint NFT';
 
   // ─── Burn button ───
-  const burnDisabled = !displayAddress || !hasTokens || burnPending;
+  const burnDisabled = !displayAddress || !hasTokens || burnPending || !allDataReady;
   const burnLabel = !displayAddress
     ? 'Burn'
     : burnPending
@@ -72,30 +72,34 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
         <div className="conditions-area">
           <GateConditions
             gateAddress={status.mintGate}
+            tokenProxy={token.proxy}
+            mode="mint"
             chainId={token.chainId}
             userAddress={addr}
             label="Mint"
             onFollow={async (target: `0x${string}`) => {
               const iface = new ethers.Interface(['function follow(address addr) external']);
-              await sendTx('Follow Profile', LSP26_ADDRESS, iface.encodeFunctionData('follow', [target]), token.chainId);
+              await sendTx('Follow Profile', lsp26Address(token.chainId), iface.encodeFunctionData('follow', [target]), token.chainId);
               onRefetch();
             }}
           />
           <GateConditions
             gateAddress={status.holdGate}
+            tokenProxy={token.proxy}
+            mode="hold"
             chainId={token.chainId}
             userAddress={addr}
             label="Hold"
             onFollow={async (target: `0x${string}`) => {
               const iface = new ethers.Interface(['function follow(address addr) external']);
-              await sendTx('Follow Profile', LSP26_ADDRESS, iface.encodeFunctionData('follow', [target]), token.chainId);
+              await sendTx('Follow Profile', lsp26Address(token.chainId), iface.encodeFunctionData('follow', [target]), token.chainId);
               onRefetch();
             }}
           />
         </div>
-        {hasHoldGate && status.revokable && (
+        {hasHoldConditions && status.revokable && (
           <p className="revoke-warning">
-            {'\u26A0\uFE0F'} Revokable Token — Owner can revoke if hold conditions unmet
+            {'\u26A0\uFE0F'} Revokable Token — Owner can revoke if Hold Conditions are unmet
           </p>
         )}
       </div>
@@ -106,25 +110,27 @@ export function ActionCard({ token, status, onRefetch, displayAddress }: Props) 
       <div className="card-section card-section--center card-block--action">
         <span className="section-label"><EmojiText>🐰 Claim&Action 🐰</EmojiText></span>
 
-        <div className="action-bar">
-          <button
-            onClick={mint}
-            disabled={mintDisabled}
-            className="btn btn-primary btn-sm"
-          >
-            {mintLabel}
-          </button>
+        <div className="value-fade" style={{ opacity: allDataReady ? 1 : 0 }}>
+          <div className="action-bar">
+            <button
+              onClick={mint}
+              disabled={mintDisabled}
+              className="btn btn-primary btn-sm"
+            >
+              {mintLabel}
+            </button>
 
-          <button
-            onClick={() => burn(1)}
-            disabled={burnDisabled}
-            className="btn btn-secondary btn-sm"
-          >
-            {burnLabel}
-          </button>
+            <button
+              onClick={() => burn(1)}
+              disabled={burnDisabled}
+              className="btn btn-secondary btn-sm"
+            >
+              {burnLabel}
+            </button>
+          </div>
+
+          <p className="action-status">{statusLine}</p>
         </div>
-
-        <p className="action-status">{statusLine}</p>
       </div>
     </div>
   );

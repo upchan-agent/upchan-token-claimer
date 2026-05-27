@@ -24,7 +24,7 @@ const GATE_ABI = [
 
 export interface TokenRequirement {
   token: string;
-  minAmount: number;
+  minAmount: string;
 }
 
 export interface GateSettings {
@@ -65,7 +65,7 @@ export async function fetchGateSettings(
     minFollowers: Number(followers as bigint),
     tokenReqs: (tokens as { token: string; minAmount: bigint }[]).map(t => ({
       token: t.token,
-      minAmount: Number(t.minAmount),
+      minAmount: t.minAmount.toString(),
     })),
     useOr: op as boolean,
   };
@@ -110,8 +110,8 @@ export function useRequirementsGate(gateAddress: string | null, chainId: number)
   );
 
   const setAll = useCallback(
-    (follow: string, lyx: string, followers: number, tokenReqs: { token: string; amount: number }[], orMode: boolean) =>
-      callGate('function setAll(address,uint256,uint256,(address,uint256)[],bool)', [follow, BigInt(lyx || '0'), followers, tokenReqs.map(t => [t.token, BigInt(t.amount)]), orMode], 'Save All Conditions'),
+    (follow: string, lyx: string, followers: number, tokenReqs: { token: string; amount: string }[], orMode: boolean) =>
+      callGate('function setAll(address,uint256,uint256,(address,uint256)[],bool)', [follow, BigInt(lyx || '0'), followers, tokenReqs.map(t => [t.token, BigInt(t.amount || '0')]), orMode], 'Save All Conditions'),
     [callGate],
   );
 

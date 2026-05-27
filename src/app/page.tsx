@@ -74,10 +74,11 @@ export default function HomePage() {
           <TokenCard token={displayToken} />
 
           {/* Details + Properties */}
-          <StatusCard token={displayToken} status={st} chain={chain} onRefresh={refresh} />
+          <StatusCard key={displayToken.proxy} token={displayToken} status={st} chain={chain} onRefresh={refresh} />
 
           {/* Gate + Mint */}
           <ActionCard
+            key={`action-${displayToken.proxy}`}
             token={displayToken}
             status={st}
             onRefetch={refresh}
@@ -85,7 +86,7 @@ export default function HomePage() {
           />
 
           {/* Holders */}
-          <HoldersCard token={displayToken} />
+          <HoldersCard key={`holders-${displayToken.proxy}`} token={displayToken} />
 
           {/* Owner Panel */}
           <OwnerPanel

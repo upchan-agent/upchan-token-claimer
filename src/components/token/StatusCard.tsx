@@ -5,12 +5,17 @@ import { TokenConfig, assetUrl, profileUrl } from '@/config/tokens';
 import { TokenStatus } from '@/hooks/useTokenStatus';
 import { useProfileMetadata } from '@/hooks/useProfile';
 import { YesIcon, NoIcon, DashIcon } from '../Icons';
+import { EmojiText } from '../EmojiText';
 
 function fmtSoulbound(s: TokenStatus): string {
+  if (!s.transferLockEnabled) {
+    if (s.isTransferable) return 'No';
+    if (s.isSoulbound) return 'Yes';
+    return '—';
+  }
   if (!s.isSoulbound) return 'No';
-  if (!s.transferLockEnabled) return 'Free';
   if (s.transferLockStart === 0n && s.transferLockEnd > 2n ** 200n) return 'Forever';
-  if (s.isTransferable) return 'Free';
+  if (s.isTransferable) return 'No';
   const fmt = (ts: bigint) => {
     const d = new Date(Number(ts) * 1000);
     return `'${d.getFullYear().toString().slice(-2)}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
@@ -19,7 +24,16 @@ function fmtSoulbound(s: TokenStatus): string {
   if (s.transferLockStart === 0n && s.transferLockEnd > 0n) return `\u007e${fmt(s.transferLockEnd)}`;
   return `${fmt(s.transferLockStart)}-${fmt(s.transferLockEnd)}`;
 }
-import { EmojiText } from '../EmojiText';
+
+function fmtRevokable(s: TokenStatus): string {
+  if (!s.revokable) return 'No';
+  return s.holdExtensionCount > 0 ? 'By Hold Gates 🛡' : 'No Gate 🔓';
+}
+
+function fmtLockStatus(locked: boolean, ruleCount = 0): string {
+  const base = locked ? 'Fixed 🔏' : 'Editable 📝';
+  return ruleCount > 0 ? `${base} ${ruleCount} Rules` : base;
+}
 
 interface Props {
   token: TokenConfig;
@@ -50,7 +64,20 @@ function StatusIcon({ value }: { value: PropValue }) {
   return null;
 }
 
+/** Opacity fade only the VALUE part — labels stay visible.
+ *  CSS transition is in .value-fade class; only opacity toggles inline. */
+const fade = (ready: boolean) => ({
+  opacity: ready ? 1 : 0,
+});
+
 export function StatusCard({ token, status, chain }: Props) {
+  const load = status.isLoading;
+  const ownerMeta = useProfileMetadata(status.owner, token.chainId);
+
+  // contentReady = server data + owner profile metadata both available
+  const contentReady = !load && !ownerMeta.isLoading;
+
+  // ─── Supply (always computed from current props) ───
   const supplyCapNum = status.supplyCap === 0n || status.supplyCap >= (2n ** 256n - 1n) / 2n
     ? null
     : Number(status.supplyCap);
@@ -59,6 +86,7 @@ export function StatusCard({ token, status, chain }: Props) {
     ? Math.min((totalSupplyNum / supplyCapNum) * 100, 100)
     : 0;
 
+  // ─── Status pill (always real value — invisible until ready) ───
   const statusClass = status.mintingDisabled
     ? 'status-pill--closed'
     : status.isMintable
@@ -70,43 +98,39 @@ export function StatusCard({ token, status, chain }: Props) {
       ? 'Minting Open'
       : 'Paused';
 
-  // All properties always shown — card size maintains stable layout
-  // Loading state shows dashes for visual consistency
-  const load = status.isLoading;
-  const ownerMeta = useProfileMetadata(status.owner, token.chainId);
+  // ─── Properties (always real values — invisible until ready) ───
   const properties: PropRow[] = [
     {
       label: 'Soulbound',
-      value: load ? 'none' : (status.isSoulbound ? 'yes' : 'no'),
-      display: load ? '-' : fmtSoulbound(status),
+      value: status.isSoulbound ? 'yes' : 'no',
+      display: fmtSoulbound(status),
     },
     {
       label: 'Revokable',
-      value: load ? 'none' : (status.revokable ? 'yes' : 'no'),
-      display: load ? '-' : (
-        !status.revokable ? 'No'
-        : status.holdGate !== '0x0000000000000000000000000000000000000000' ? 'Yes'
-        : 'Yes (no Hold Gate)'
-      ),
+      value: status.revokable ? 'yes' : 'no',
+      display: fmtRevokable(status),
     },
     {
       label: 'Balance Cap',
-      value: load ? 'none' : (status.balanceCap > 0n ? 'yes' : 'none'),
-      display: load ? '-' : (status.balanceCap > 0n ? String(status.balanceCap) : '-'),
+      value: status.balanceCap > 0n ? 'yes' : 'none',
+      display: status.balanceCap > 0n ? String(status.balanceCap) : '—',
     },
     {
       label: 'Cap Status',
-      value: load ? 'none' : (status.isSupplyCapLocked ? 'yes' : 'none'),
-      display: load ? '-' : (status.isSupplyCapLocked ? 'Locked' : 'Flexible'),
+      value: status.isSupplyCapLocked ? 'yes' : 'none',
+      display: fmtLockStatus(status.isSupplyCapLocked),
     },
   ];
 
   return (
     <div className="card anim anim-d2">
+      {/* ═══════════════════════════════════════════
+          Details — labels always visible, values fade in
+          ═══════════════════════════════════════════ */}
       <div className="card-section">
         <span className="section-label"><EmojiText>🍭 Details 🍭</EmojiText></span>
 
-        {/* Contract */}
+        {/* Contract — static from config */}
         <div className="data-row">
           <span className="data-label">Contract</span>
           <a
@@ -115,113 +139,91 @@ export function StatusCard({ token, status, chain }: Props) {
             rel="noopener noreferrer"
             className="data-value link"
           >
-            {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)} ↗
+            {ethers.getAddress(token.proxy).slice(0, 10)}…{ethers.getAddress(token.proxy).slice(-6)}
           </a>
         </div>
 
-        {/* Owner */}
+        {/* Owner — label visible, value fades */}
         <div className="data-row">
           <span className="data-label">Owner</span>
-          {load ? (
-            <span className="data-value">-</span>
-          ) : (
-            <a
-              href={profileUrl(status.owner)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="data-value link"
-            >
-              {ownerMeta.data?.image && (
-                <img
-                  src={ownerMeta.data.image.replace('ipfs://', 'https://ipfs.io/ipfs/')}
-                  alt=""
-                  style={{ width: 16, height: 16, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}
-                />
-              )}
-              {ownerMeta.data?.name || `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`} ↗
-            </a>
-          )}
+          <a
+            href={profileUrl(status.owner)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="data-value link value-fade"
+            style={fade(contentReady)}
+          >
+            {ownerMeta.data?.image && (
+              <img
+                src={ownerMeta.data.image.replace('ipfs://', 'https://ipfs.io/ipfs/')}
+                alt=""
+                style={{ width: 16, height: 16, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}
+              />
+            )}
+            {status.owner === ethers.ZeroAddress
+              ? 'Renounced'
+              : (ownerMeta.data?.name || `${status.owner.slice(0, 10)}…${status.owner.slice(-4)}`)}
+          </a>
         </div>
 
-        {/* Network */}
+        {/* Network — static from config */}
         <div className="data-row">
           <span className="data-label">Network</span>
           <span className="data-value">{chain.name}</span>
         </div>
 
-        {/* Status */}
+        {/* Status — label visible, pill fades */}
         <div className="data-row">
           <span className="data-label">Status</span>
-          <span className="data-value">
+          <span className="data-value value-fade" style={fade(contentReady)}>
             <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
           </span>
         </div>
 
-        {/* Supply */}
+        {/* Supply — label visible, bar + count fade */}
         <div className="data-row data-row--supply">
           <span className="data-label">Supply</span>
-          <span className="data-value">
+          <span className="data-value value-fade" style={fade(contentReady)}>
             <div className="progress-fill" style={{ width: `${pct}%` }} />
             <span>{totalSupplyNum} / {supplyCapNum ?? '∞'}</span>
           </span>
         </div>
       </div>
 
-      {/* Properties */}
+      {/* ═══════════════════════════════════════════
+          Properties — labels always visible, values fade in
+          ═══════════════════════════════════════════ */}
       <div className="card-section">
         <span className="section-label"><EmojiText>🍬 Properties 🍬</EmojiText></span>
+
         {properties.map((p) => (
           <div className="data-row" key={p.label}>
             <span className="data-label">{p.label}</span>
-            <StatusIcon value={p.value} />
-            <span className="data-value">{p.display}</span>
+            <span style={fade(contentReady)}><StatusIcon value={p.value} /></span>
+            <span className="data-value value-fade" style={fade(contentReady)}>{p.display}</span>
           </div>
         ))}
 
-        {/* Mint Gate */}
+        {/* Mint Conditions — label visible, icon + value fade */}
         <div className="data-row">
-          <span className="data-label">Mint Gate</span>
-          {load || status.mintGate === '0x0000000000000000000000000000000000000000' ? (
-            <>
-              <StatusIcon value="none" />
-              <span className="data-value">-</span>
-            </>
-          ) : (
-            <>
-              <StatusIcon value="yes" />
-              <a
-                href={`${chain.explorer}/address/${status.mintGate}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="data-value link"
-              >
-                {status.mintGate.slice(0, 10)}…{status.mintGate.slice(-4)}{status.isMintGateLocked ? ' 🔒' : ''} ↗
-              </a>
-            </>
-          )}
-        </div>
+          <span className="data-label">Mint Conditions</span>
+          <span style={fade(contentReady)}>
+            <StatusIcon value={status.mintConditionsLocked ? 'yes' : 'none'} />
+          </span>
+            <span className="data-value value-fade" style={fade(contentReady)}>
+              {fmtLockStatus(status.mintConditionsLocked, status.mintExtensionCount)}
+            </span>
+          </div>
 
-        {/* Hold Gate */}
+        {/* Hold Conditions */}
         <div className="data-row">
-          <span className="data-label">Hold Gate</span>
-          {load || status.holdGate === '0x0000000000000000000000000000000000000000' ? (
-            <>
-              <StatusIcon value="none" />
-              <span className="data-value">-</span>
-            </>
-          ) : (
-            <>
-              <StatusIcon value="yes" />
-              <a
-                href={`${chain.explorer}/address/${status.holdGate}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="data-value link"
-              >
-                {status.holdGate.slice(0, 10)}…{status.holdGate.slice(-4)}{status.isHoldGateLocked ? ' 🔒' : ''} ↗
-              </a>
-            </>
-          )}
+          <span className="data-label">Hold Conditions</span>
+          <span style={fade(contentReady)}>
+            <StatusIcon value={status.holdConditionsLocked ? 'yes' : 'none'} />
+          </span>
+            <span className="data-value value-fade" style={fade(contentReady)}>
+              {fmtLockStatus(status.holdConditionsLocked, status.holdExtensionCount)}
+            </span>
         </div>
       </div>
 

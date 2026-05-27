@@ -527,7 +527,7 @@ body {
 /* Pill segmented control (token selector) */
 .pill-group {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--space-2xs);
   padding: var(--space-2xs);
   border-radius: var(--radius-pill);
@@ -536,6 +536,8 @@ body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  width: fit-content;
+  margin: 0 auto;
 }
 
 .pill-group::-webkit-scrollbar {

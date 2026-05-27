@@ -25,7 +25,7 @@ export function Header({ onViewAddress, viewAddress }: {
         }}
       />
       <header className="app-header">
-        <div className="text-caption-bold">
+        <div style={{ fontSize: 17, fontWeight: 700 }}>
           <EmojiText>🆙chan</EmojiText> Token Claimer
         </div>
 

@@ -180,6 +180,23 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
   flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Token hero background (C-1) ─── */
+.token-hero-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px) saturate(1.2);
 }
 
 .scrollable::-webkit-scrollbar { width: 4px; }
@@ -287,6 +304,30 @@ body {
   padding-bottom: 0;
   margin-bottom: 0;
   border-bottom: none;
+}
+
+/* ─── Card Row (B-3: two-column on desktop) ─── */
+.card-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Standalone (desktop browser) — relax width + 2-column */
+.standalone .section-content {
+  max-width: 760px;
+}
+
+@media (min-width: 720px) {
+  .standalone .card-row {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .standalone .card-row > * {
+    flex: 1;
+    min-width: 280px;
+  }
 }
 
 /* ─── Section layout: label top-left, content below ─── */
@@ -536,8 +577,7 @@ body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-  width: fit-content;
-  margin: 0 auto;
+  max-width: 100%;
 }
 
 .pill-group::-webkit-scrollbar {

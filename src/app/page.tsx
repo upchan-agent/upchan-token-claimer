@@ -14,13 +14,14 @@ import { StatusCard } from '@/components/token/StatusCard';
 import { ActionCard } from '@/components/ActionCard';
 import { HoldersCard } from '@/components/token/HoldersCard';
 import { OwnerPanel } from '@/components/owner/OwnerPanel';
+import { useTokenOnChainData } from '@/hooks/useTokenMeta';
 
 export default function HomePage() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [id, setId] = useState<string | null>(params.get('token') || TOKENS[0]?.id || null);
-  const { accounts, chainId, isConnected } = useUpProvider();
+  const { accounts, chainId, isConnected, connectionSource } = useUpProvider();
   const vm = useViewMode(accounts[0] || null);
 
   const chains = useMemo(() => {
@@ -40,6 +41,7 @@ export default function HomePage() {
 
   const st = useTokenStatus(displayToken, vm.displayAddress);
   const refresh = st.refetch;
+  const tokenMeta = useTokenOnChainData(displayToken);
 
   // Use UP's actual chain for display if available, else fallback to token config
   const chain = displayToken
@@ -56,7 +58,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${connectionSource !== 'grid' ? ' standalone' : ''}`}>
+      {/* C-1: Token image as decorative background */}
+      {tokenMeta.image && (
+        <div
+          className="token-hero-bg"
+          style={{ backgroundImage: `url(${tokenMeta.image})` }}
+        />
+      )}
       <Header onViewAddress={vm.setViewAddress} viewAddress={vm.viewAddress} />
 
       {/* Scrollable body */}
@@ -73,17 +82,20 @@ export default function HomePage() {
           {/* Token identity card */}
           <TokenCard token={displayToken} />
 
-          {/* Details + Properties */}
-          <StatusCard key={displayToken.proxy} token={displayToken} status={st} chain={chain} onRefresh={refresh} />
+          {/* B-3: Two-column on desktop — Status + Action side by side */}
+          <div className="card-row">
+            {/* Details + Properties */}
+            <StatusCard key={displayToken.proxy} token={displayToken} status={st} chain={chain} onRefresh={refresh} />
 
-          {/* Gate + Mint */}
-          <ActionCard
-            key={`action-${displayToken.proxy}`}
-            token={displayToken}
-            status={st}
-            onRefetch={refresh}
-            displayAddress={vm.displayAddress}
-          />
+            {/* Gate + Mint */}
+            <ActionCard
+              key={`action-${displayToken.proxy}`}
+              token={displayToken}
+              status={st}
+              onRefetch={refresh}
+              displayAddress={vm.displayAddress}
+            />
+          </div>
 
           {/* Holders */}
           <HoldersCard key={`holders-${displayToken.proxy}`} token={displayToken} />

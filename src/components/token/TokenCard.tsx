@@ -2,20 +2,17 @@
 
 import { useState } from 'react';
 import { TokenConfig } from '@/config/tokens';
+import { ipfsUrl } from '@/config/tokens';
 import { useTokenOnChainData } from '@/hooks/useTokenMeta';
 import { EmojiText } from '../EmojiText';
 import { Popup } from '../Popup';
 import '../TokenCard.css';
 
-function ipfs(url: string): string {
-  return url?.replace('ipfs://', 'https://ipfs.io/ipfs/') || '';
-}
-
 export function TokenCard({ token }: { token: TokenConfig }) {
   const onChain = useTokenOnChainData(token);
   const [popup, setPopup] = useState(false);
 
-  const imgUrl = ipfs(onChain.image);
+  const imgUrl = ipfsUrl(onChain.image);
   const name = onChain.name || '';
   const sym = onChain.symbol || '';
   const hasImg = Boolean(imgUrl);

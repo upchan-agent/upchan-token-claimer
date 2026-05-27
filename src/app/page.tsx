@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useState, useMemo } from 'react';
-import { TOKENS, CHAINS } from '@/config/tokens';
+import { TOKENS, CHAINS, ipfsUrl } from '@/config/tokens';
 import { useUpProvider } from '@/providers/UpProvider';
 import { useViewMode } from '@/hooks/useViewMode';
 import { useTokenStatus } from '@/hooks/useTokenStatus';
@@ -63,7 +63,7 @@ export default function HomePage() {
       {tokenMeta.image && (
         <div
           className="token-hero-bg"
-          style={{ backgroundImage: `url(${tokenMeta.image})` }}
+          style={{ backgroundImage: `url(${ipfsUrl(tokenMeta.image)})` }}
         />
       )}
       <Header onViewAddress={vm.setViewAddress} viewAddress={vm.viewAddress} />

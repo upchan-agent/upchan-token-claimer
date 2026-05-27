@@ -577,7 +577,9 @@ body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  width: fit-content;
   max-width: 100%;
+  margin: 0 auto;
 }
 
 .pill-group::-webkit-scrollbar {

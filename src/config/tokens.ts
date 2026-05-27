@@ -114,3 +114,8 @@ export function assetUrl(address: string, chainId: number): string {
 export function profileUrl(address: string): string {
   return `https://universalprofile.cloud/${address}`;
 }
+
+/** Convert ipfs:// to https gateway URL */
+export function ipfsUrl(url: string): string {
+  return url?.replace('ipfs://', 'https://ipfs.io/ipfs/') || '';
+}

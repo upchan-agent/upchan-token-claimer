@@ -208,6 +208,11 @@ export function UPProvider({ children }: { children: ReactNode }) {
     // Grid 内では親からの自動接続を使う
     if (connectionSource === 'grid') return;
 
+    // モーダルが破棄されていたら再初期化（disconnect後など）
+    if (!modalConnectorInstance) {
+      await initStandaloneModal();
+    }
+
     // up-modal が利用可能ならモーダルを開く
     if (modalConnectorInstance) {
       modalConnectorInstance.showSignInModal();
@@ -232,14 +237,16 @@ export function UPProvider({ children }: { children: ReactNode }) {
   }, [connectionSource]);
 
   const disconnect = useCallback(async () => {
-    // modal 経由の接続なら wagmi disconnect も呼ぶ
+    // modal 経由の接続なら wagmi disconnect + modal 破棄
     if (connectionSource === 'modal' && modalConnectorInstance) {
       try {
         const { disconnect: wagmiDisconnect } = await import('@wagmi/core');
         await wagmiDisconnect(modalConnectorInstance.wagmiConfig);
+        modalConnectorInstance.destroyModal();
       } catch (e) {
         console.warn('[UP] wagmi disconnect error:', e);
       }
+      modalConnectorInstance = null;
     }
     setAccounts([]);
     setChainId(null);

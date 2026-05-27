@@ -196,12 +196,12 @@ body {
   opacity: 0;
   pointer-events: none;
   z-index: 0;
-  filter: blur(15px) saturate(1.2);
+  filter: blur(8px) saturate(1.2);
   transition: opacity 700ms ease;
 }
 
 .token-hero-bg--loaded {
-  opacity: 0.25;
+  opacity: 0.4;
 }
 
 .scrollable::-webkit-scrollbar { width: 4px; }

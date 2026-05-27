@@ -314,8 +314,10 @@ body {
 }
 
 /* Standalone (desktop browser) — relax width + 2-column */
+/* 各カード幅を縦長時代(480px - padding = 456px)に保つために max-width を算出:
+   456px(card1) + 16px(gap) + 456px(card2) + 24px(section padding) = 952px */
 .standalone .section-content {
-  max-width: 760px;
+  max-width: 952px;
 }
 
 @media (min-width: 720px) {

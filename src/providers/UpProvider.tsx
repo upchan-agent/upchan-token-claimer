@@ -163,6 +163,7 @@ export function UPProvider({ children }: { children: ReactNode }) {
         },
         chains: {
           additional: [luksoTestnet],
+          skipChainSwitch: true, // mainnet/testnet 混在アプリなので自動切り替え禁止
         },
         connectors: {
           eoa: false, // UP 専用、EOA は許容しない

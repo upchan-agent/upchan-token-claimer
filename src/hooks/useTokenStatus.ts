@@ -43,12 +43,43 @@ export interface TokenStatus {
   mintRuleCount: number;
   /** Number of active hold condition rule groups */
   holdRuleCount: number;
+  /** Full mint condition settings for owner editing */
+  mintConditions: TokenConditions;
+  /** Full hold condition settings for owner editing */
+  holdConditions: TokenConditions;
+  /** Result of canCallerMint(userAddress); true when wallet is not connected */
+  isMintableByConditions: boolean;
   canMint: boolean;
   isLoading: boolean;
   isUserDataReady: boolean;
   isFetching: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+}
+
+export interface ERC725YCondition {
+  dataKey: string;
+  minCount: string;
+}
+
+export interface TokenRequirement {
+  token: string;
+  minAmount: string;
+  specificTokenId: string;
+}
+
+export interface TokenConditions {
+  followTargets: string[];
+  minBalance: string;
+  minFollowing: string;
+  minFollowers: string;
+  erc725y: ERC725YCondition[];
+  tokenReqs: TokenRequirement[];
+  followUseOr: boolean;
+  erc725yUseOr: boolean;
+  tokenReqsUseOr: boolean;
+  useOr: boolean;
+  locked: boolean;
 }
 
 interface ServerData {
@@ -69,6 +100,8 @@ interface ServerData {
   holdExtensionCount: number;
   mintRuleCount: number;
   holdRuleCount: number;
+  mintConditions: TokenConditions;
+  holdConditions: TokenConditions;
 }
 
 const ZERO = '0x0000000000000000000000000000000000000000' as const;
@@ -86,9 +119,30 @@ const TOKEN_ABI = [
   'function owner() view returns (address)',
   'function pendingOwner() view returns (address)',
   'function balanceOf(address) view returns (uint256)',
+  'function canCallerMint(address) view returns (bool)',
   'function getMintConditions() view returns (uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool,bool,uint256)',
   'function getHoldConditions() view returns (uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool,bool,uint256)',
+  'function mintFollowTarget(uint256) view returns (address)',
+  'function holdFollowTarget(uint256) view returns (address)',
+  'function mintERC725YCondition(uint256) view returns (bytes32,uint256)',
+  'function holdERC725YCondition(uint256) view returns (bytes32,uint256)',
+  'function mintTokenReq(uint256) view returns (address,uint256,bytes32)',
+  'function holdTokenReq(uint256) view returns (address,uint256,bytes32)',
 ];
+
+const EMPTY_CONDITIONS: TokenConditions = {
+  followTargets: [],
+  minBalance: '0',
+  minFollowing: '0',
+  minFollowers: '0',
+  erc725y: [],
+  tokenReqs: [],
+  followUseOr: false,
+  erc725yUseOr: false,
+  tokenReqsUseOr: false,
+  useOr: false,
+  locked: false,
+};
 
 const SERVER_DEFAULTS: ServerData = {
   totalSupply: 0n,
@@ -108,6 +162,8 @@ const SERVER_DEFAULTS: ServerData = {
   holdExtensionCount: 0,
   mintRuleCount: 0,
   holdRuleCount: 0,
+  mintConditions: EMPTY_CONDITIONS,
+  holdConditions: EMPTY_CONDITIONS,
 };
 
 function countConditionRules(conds: unknown[]): number {
@@ -116,6 +172,77 @@ function countConditionRules(conds: unknown[]): number {
     const value = conds[index];
     return total + (typeof value === 'bigint' && value > 0n ? 1 : 0);
   }, 0);
+}
+
+function asBigint(value: unknown): bigint {
+  return typeof value === 'bigint' ? value : 0n;
+}
+
+function asBool(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : false;
+}
+
+async function readConditionDetails(
+  c: ethers.Contract,
+  mode: 'mint' | 'hold',
+  conds: unknown[],
+): Promise<TokenConditions> {
+  const [
+    followTargetsCount,
+    minBalance,
+    minFollowing,
+    minFollowers,
+    erc725yCount,
+    tokenReqCount,
+    followUseOr,
+    erc725yUseOr,
+    tokenReqsUseOr,
+    useOr,
+    locked,
+  ] = conds;
+
+  const followGetter = mode === 'mint' ? 'mintFollowTarget' : 'holdFollowTarget';
+  const erc725yGetter = mode === 'mint' ? 'mintERC725YCondition' : 'holdERC725YCondition';
+  const tokenReqGetter = mode === 'mint' ? 'mintTokenReq' : 'holdTokenReq';
+
+  const followTargets = await Promise.all(
+    Array.from({ length: Number(asBigint(followTargetsCount)) }, async (_, i) => {
+      const value = await c[followGetter](i).catch(() => ZERO);
+      return value === ZERO ? '' : ethers.getAddress(value);
+    }),
+  );
+
+  const erc725y = await Promise.all(
+    Array.from({ length: Number(asBigint(erc725yCount)) }, async (_, i) => {
+      const value = await c[erc725yGetter](i).catch(() => null);
+      if (!value) return null;
+      const [dataKey, minCount] = value as [string, bigint];
+      return { dataKey, minCount: minCount.toString() };
+    }),
+  );
+
+  const tokenReqs = await Promise.all(
+    Array.from({ length: Number(asBigint(tokenReqCount)) }, async (_, i) => {
+      const value = await c[tokenReqGetter](i).catch(() => null);
+      if (!value) return null;
+      const [token, minAmount, specificTokenId] = value as [string, bigint, string];
+      return { token: ethers.getAddress(token), minAmount: minAmount.toString(), specificTokenId };
+    }),
+  );
+
+  return {
+    followTargets: followTargets.filter(Boolean),
+    minBalance: asBigint(minBalance).toString(),
+    minFollowing: asBigint(minFollowing).toString(),
+    minFollowers: asBigint(minFollowers).toString(),
+    erc725y: erc725y.filter((v): v is ERC725YCondition => v !== null),
+    tokenReqs: tokenReqs.filter((v): v is TokenRequirement => v !== null),
+    followUseOr: asBool(followUseOr),
+    erc725yUseOr: asBool(erc725yUseOr),
+    tokenReqsUseOr: asBool(tokenReqsUseOr),
+    useOr: asBool(useOr),
+    locked: asBool(locked),
+  };
 }
 
 // ─── Server data: token-level state (no user dependency) ───
@@ -146,6 +273,30 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
 
   const mintConds = mc as unknown[];
   const holdConds = hc as unknown[];
+  const [mintConditions, holdConditions] = await Promise.all([
+    readConditionDetails(c, 'mint', mintConds).catch(() => ({
+      ...EMPTY_CONDITIONS,
+      minBalance: asBigint(mintConds[1]).toString(),
+      minFollowing: asBigint(mintConds[2]).toString(),
+      minFollowers: asBigint(mintConds[3]).toString(),
+      followUseOr: asBool(mintConds[6]),
+      erc725yUseOr: asBool(mintConds[7]),
+      tokenReqsUseOr: asBool(mintConds[8]),
+      useOr: asBool(mintConds[9]),
+      locked: asBool(mintConds[10]),
+    })),
+    readConditionDetails(c, 'hold', holdConds).catch(() => ({
+      ...EMPTY_CONDITIONS,
+      minBalance: asBigint(holdConds[1]).toString(),
+      minFollowing: asBigint(holdConds[2]).toString(),
+      minFollowers: asBigint(holdConds[3]).toString(),
+      followUseOr: asBool(holdConds[6]),
+      erc725yUseOr: asBool(holdConds[7]),
+      tokenReqsUseOr: asBool(holdConds[8]),
+      useOr: asBool(holdConds[9]),
+      locked: asBool(holdConds[10]),
+    })),
+  ]);
 
   return {
     totalSupply: ts as bigint,
@@ -165,6 +316,8 @@ async function fetchServerData(token: TokenConfig): Promise<ServerData> {
     holdExtensionCount: Number(holdConds[11]),
     mintRuleCount: countConditionRules(mintConds),
     holdRuleCount: countConditionRules(holdConds),
+    mintConditions,
+    holdConditions,
   };
 }
 
@@ -193,13 +346,23 @@ export function useTokenStatus(
   });
   const userBalance = balanceQuery.data ?? 0n;
 
+  // Tier 3: User-specific condition check. Default true when disconnected.
+  const canMintQuery = useQuery({
+    queryKey: ['token-can-mint', token?.proxy, token?.chainId, userAddress],
+    queryFn: () => fetchCanCallerMint(token!, userAddress!),
+    enabled: !!token && !!userAddress,
+  });
+  const isMintableByConditions = userAddress ? (canMintQuery.data ?? false) : true;
+
   // ─── Stable refetch — useCallback so it doesn't recreate on every isFetching toggle ───
   const refetch = useCallback(async () => {
-    await Promise.all([
+    const queries: Promise<unknown>[] = [
       serverQuery.refetch(),
       balanceQuery.refetch(),
-    ]);
-  }, [serverQuery.refetch, balanceQuery.refetch]);
+    ];
+    if (token && userAddress) queries.push(canMintQuery.refetch());
+    await Promise.all(queries);
+  }, [serverQuery.refetch, balanceQuery.refetch, canMintQuery.refetch, token, userAddress]);
 
   // ─── Merge all tiers into single TokenStatus ───
   const merged: TokenStatus = useMemo(() => ({
@@ -210,6 +373,7 @@ export function useTokenStatus(
     isMintGateLocked: server.mintConditionsLocked,
     isHoldGateLocked: server.holdConditionsLocked,
     userBalance,
+    isMintableByConditions,
     isFollowing: false,
     // Transfer lock fields — not directly readable in new impl, default to false
     transferLockStart: 0n,
@@ -219,19 +383,22 @@ export function useTokenStatus(
       server.isMintable &&
       !server.mintingDisabled &&
       (server.balanceCap === 0n || userBalance < server.balanceCap) &&
-      (server.supplyCap === 0n || server.totalSupply < server.supplyCap),
+      (server.supplyCap === 0n || server.totalSupply < server.supplyCap) &&
+      isMintableByConditions,
     isLoading: serverQuery.isLoading,
     isUserDataReady: !balanceQuery.isLoading,
     isFetching:
-      serverQuery.isFetching || balanceQuery.isFetching,
+      serverQuery.isFetching || balanceQuery.isFetching || canMintQuery.isFetching,
     error:
       serverQuery.error?.message ??
       balanceQuery.error?.message ??
+      canMintQuery.error?.message ??
       null,
     refetch,
   }), [server, userBalance, serverQuery.isLoading, serverQuery.isFetching,
       balanceQuery.isFetching, balanceQuery.isLoading, serverQuery.error,
-      balanceQuery.error, refetch]);
+      balanceQuery.error, canMintQuery.isFetching, canMintQuery.error,
+      isMintableByConditions, refetch]);
 
   return merged;
 }
@@ -245,6 +412,14 @@ async function fetchUserBalance(token: TokenConfig, userAddress: string): Promis
   const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
   const [bal] = await Promise.all([c.balanceOf(userAddress).catch(() => 0n)]);
   return bal as bigint;
+}
+
+async function fetchCanCallerMint(token: TokenConfig, userAddress: string): Promise<boolean> {
+  const chain = CHAINS[token.chainId];
+  if (!chain) return false;
+  const p = new ethers.JsonRpcProvider(chain.rpc);
+  const c = new ethers.Contract(token.proxy, TOKEN_ABI, p);
+  return !!(await c.canCallerMint(userAddress).catch(() => false));
 }
 
 // ─── Mint ────────────────────────────────────────────────

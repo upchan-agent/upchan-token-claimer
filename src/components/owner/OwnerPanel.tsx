@@ -23,6 +23,7 @@ import { useOwnerActions } from '@/hooks/useOwnerActions';
 import { useUpProvider } from '@/providers/UpProvider';
 import { EmojiText } from '../EmojiText';
 import { GateEditor } from './GateEditor';
+import { ConditionEditor, ConditionEditorData } from './ConditionEditor';
 import { useTxContext } from '@/providers/TxContext';
 
 interface Props {
@@ -114,6 +115,36 @@ function GatePicker({
   );
 }
 
+function parseCount(value: string): bigint {
+  return BigInt(value || '0');
+}
+
+function isPositiveIntegerString(value: string): boolean {
+  return /^[1-9]\d*$/.test(value);
+}
+
+function toOwnerConditionInput(data: ConditionEditorData) {
+  return {
+    followTargets: data.followTargets,
+    minBalance: ethers.parseEther(data.minBalance || '0'),
+    minFollowing: parseCount(data.minFollowing),
+    minFollowers: parseCount(data.minFollowers),
+    erc725y: data.erc725y.map(item => ({
+      dataKey: item.dataKey,
+      minCount: parseCount(item.minCount),
+    })),
+    tokenReqs: data.tokenReqs.map(item => ({
+      token: item.token,
+      minAmount: parseCount(item.minAmount),
+      specificTokenId: item.specificTokenId,
+    })),
+    followUseOr: data.followUseOr,
+    erc725yUseOr: data.erc725yUseOr,
+    tokenReqsUseOr: data.tokenReqsUseOr,
+    useOr: data.useOr,
+  };
+}
+
 // ─── Main component ─────────────────────────────────────
 
 export function OwnerPanel({ token, status, chain, onDone }: Props) {
@@ -133,6 +164,12 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
   const [mintExtRemove, setMintExtRemove] = useState('');
   const [holdExtAddr, setHoldExtAddr] = useState('');
   const [holdExtRemove, setHoldExtRemove] = useState('');
+  const [ownerMintTo, setOwnerMintTo] = useState<string>(accounts[0] || '');
+  const [ownerMintAmount, setOwnerMintAmount] = useState('1');
+
+  useEffect(() => {
+    if (!ownerMintTo && accounts[0]) setOwnerMintTo(accounts[0]);
+  }, [accounts, ownerMintTo]);
 
   const handleToggle = (s: string) => {
     toggle(s);
@@ -148,6 +185,7 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
     : 'Paused';
 
   const hasHoldConditions = status.holdRuleCount > 0;
+  const canOwnerMint = ethers.isAddress(ownerMintTo) && isPositiveIntegerString(ownerMintAmount);
 
   if (!isOwner) {
     // 自分がpendingOwnerの場合、Acceptボタンを表示
@@ -269,6 +307,41 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
               </button>
             </div>
           )}
+        </Section>
+
+        {/* Owner Mint */}
+        <Section label="Owner Mint" open={openSection === 'ownerMint'} onToggle={() => handleToggle('ownerMint')}>
+          <div className="owner-action-row">
+            <input
+              value={ownerMintTo}
+              onChange={e => setOwnerMintTo(e.target.value)}
+              placeholder="Recipient 0x..."
+              className="owner-input"
+              style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+            />
+            <input
+              type="number"
+              min="1"
+              value={ownerMintAmount}
+              onChange={e => setOwnerMintAmount(e.target.value)}
+              placeholder="Amount"
+              className="owner-input"
+              style={{ width: 100 }}
+            />
+            <button
+              onClick={async () => {
+                if (!ethers.isAddress(ownerMintTo)) return;
+                const amount = BigInt(ownerMintAmount || '0');
+                if (amount <= 0n) return;
+                await actions.ownerMint(ownerMintTo, amount);
+                onDone();
+              }}
+              disabled={actions.isPending || !canOwnerMint}
+              className="btn btn-primary btn-sm"
+            >
+              Mint
+            </button>
+          </div>
         </Section>
 
         {/* Mint Extensions */}
@@ -407,6 +480,42 @@ export function OwnerPanel({ token, status, chain, onDone }: Props) {
               </div>
             </>
           )}
+        </Section>
+
+        {/* Mint Conditions */}
+        <Section label="Mint Conditions" open={openSection === 'mintConds'} onToggle={() => handleToggle('mintConds')}>
+          <ConditionEditor
+            mode="mint"
+            chainId={chainId}
+            initialData={status.mintConditions}
+            disabled={actions.isPending}
+            onSave={async data => {
+              await actions.setMintConditions(toOwnerConditionInput(data));
+              onDone();
+            }}
+            onLock={async () => {
+              await actions.lockMintConditions();
+              onDone();
+            }}
+          />
+        </Section>
+
+        {/* Hold Conditions */}
+        <Section label="Hold Conditions" open={openSection === 'holdConds'} onToggle={() => handleToggle('holdConds')}>
+          <ConditionEditor
+            mode="hold"
+            chainId={chainId}
+            initialData={status.holdConditions}
+            disabled={actions.isPending}
+            onSave={async data => {
+              await actions.setHoldConditions(toOwnerConditionInput(data));
+              onDone();
+            }}
+            onLock={async () => {
+              await actions.lockHoldConditions();
+              onDone();
+            }}
+          />
         </Section>
 
         {/* Revoke */}

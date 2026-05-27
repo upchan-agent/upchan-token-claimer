@@ -8,13 +8,12 @@ import { useTxContext } from '../providers/TxContext';
 const ABI = [
   'function setIsMintable(bool)',
   'function permanentlyDisableMinting()',
+  'function ownerMint(address,uint256,bool,bytes)',
   'function updateSupplyCap(uint256)',
   'function lockSupplyCap()',
+  'function setMintConditions(address[],uint256,uint256,uint256,(bytes32,uint256)[],(address,uint256,bytes32)[],bool,bool,bool,bool)',
+  'function setHoldConditions(address[],uint256,uint256,uint256,(bytes32,uint256)[],(address,uint256,bytes32)[],bool,bool,bool,bool)',
   // Gate management (legacy — external gate contracts)
-  'function setMintGate(address)',
-  'function lockMintGate()',
-  'function setHoldGate(address)',
-  'function lockHoldGate()',
   // Extension management (new ICondition extension system)
   'function addMintExtension(address)',
   'function removeMintExtension(address)',
@@ -34,6 +33,30 @@ const ABI = [
 
 const LSP4_TOKEN_NAME = '0xdeba1e292f8ba88238e10ab3c7f88bd4be4fac56cad5194b6ecceaf653468af1';
 const LSP4_TOKEN_SYMBOL = '0x2f0a68ab07768e01943a599e73362a0e17a63a72e94dd2e384d2c1d4db932756';
+
+export interface OwnerERC725YConditionInput {
+  dataKey: string;
+  minCount: bigint;
+}
+
+export interface OwnerTokenRequirementInput {
+  token: string;
+  minAmount: bigint;
+  specificTokenId: string;
+}
+
+export interface OwnerConditionInput {
+  followTargets: string[];
+  minBalance: bigint;
+  minFollowing: bigint;
+  minFollowers: bigint;
+  erc725y: OwnerERC725YConditionInput[];
+  tokenReqs: OwnerTokenRequirementInput[];
+  followUseOr: boolean;
+  erc725yUseOr: boolean;
+  tokenReqsUseOr: boolean;
+  useOr: boolean;
+}
 
 /** Factory: creates an action function given a signature and callback args. */
 function act(
@@ -64,16 +87,16 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
   // ─── Mint Control ───
   const setIsMintable = useCallback((v: boolean) => a('setIsMintable', `Set Minting ${v ? 'Open' : 'Paused'}`, [v])(), [a]);
   const permanentlyDisableMinting = useCallback(() => a('permanentlyDisableMinting', 'Permanently Disable Minting', [])(), [a]);
+  const ownerMint = useCallback(
+    (to: string, amount: bigint) => a('ownerMint', 'Owner Mint', [to, amount, true, '0x'])(),
+    [a],
+  );
 
   // ─── Supply Cap ───
   const updateSupplyCap = useCallback((cap: bigint) => a('updateSupplyCap', 'Update Supply Cap', [cap])(), [a]);
   const lockSupplyCap = useCallback(() => a('lockSupplyCap', 'Fix Supply Cap', [])(), [a]);
 
   // ─── Gate Management (legacy) ───
-  const setMintGate = useCallback((addr: string) => a('setMintGate', 'Set Mint Gate', [addr])(), [a]);
-  const lockMintGate = useCallback(() => a('lockMintGate', 'Fix Mint Gate', [])(), [a]);
-  const setHoldGate = useCallback((addr: string) => a('setHoldGate', 'Set Hold Gate', [addr])(), [a]);
-  const lockHoldGate = useCallback(() => a('lockHoldGate', 'Fix Hold Gate', [])(), [a]);
 
   // ─── Extension Management (new) ───
   const addMintExtension = useCallback((addr: string) => a('addMintExtension', 'Add Mint Extension', [addr])(), [a]);
@@ -82,6 +105,26 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
   const removeHoldExtension = useCallback((addr: string) => a('removeHoldExtension', 'Remove Hold Extension', [addr])(), [a]);
   const lockMintConditions = useCallback(() => a('lockMintConditions', 'Lock Mint Conditions', [])(), [a]);
   const lockHoldConditions = useCallback(() => a('lockHoldConditions', 'Lock Hold Conditions', [])(), [a]);
+  const conditionArgs = useCallback((data: OwnerConditionInput) => [
+    data.followTargets,
+    data.minBalance,
+    data.minFollowing,
+    data.minFollowers,
+    data.erc725y.map(item => [item.dataKey, item.minCount]),
+    data.tokenReqs.map(item => [item.token, item.minAmount, item.specificTokenId]),
+    data.followUseOr,
+    data.erc725yUseOr,
+    data.tokenReqsUseOr,
+    data.useOr,
+  ], []);
+  const setMintConditions = useCallback(
+    (data: OwnerConditionInput) => a('setMintConditions', 'Set Mint Conditions', conditionArgs(data))(),
+    [a, conditionArgs],
+  );
+  const setHoldConditions = useCallback(
+    (data: OwnerConditionInput) => a('setHoldConditions', 'Set Hold Conditions', conditionArgs(data))(),
+    [a, conditionArgs],
+  );
 
   // ─── Revoke ───
   const revokeByGate = useCallback(
@@ -129,13 +172,10 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     pendingKey,
     setIsMintable,
     permanentlyDisableMinting,
+    ownerMint,
     updateSupplyCap,
     lockSupplyCap,
     // Gate (legacy)
-    setMintGate,
-    lockMintGate,
-    setHoldGate,
-    lockHoldGate,
     // Extensions (new)
     addMintExtension,
     removeMintExtension,
@@ -143,6 +183,8 @@ export function useOwnerActions(token: TokenConfig | null, _ownerAddress: `0x${s
     removeHoldExtension,
     lockMintConditions,
     lockHoldConditions,
+    setMintConditions,
+    setHoldConditions,
     revokeByGate,
     setTokenName,
     setTokenSymbol,

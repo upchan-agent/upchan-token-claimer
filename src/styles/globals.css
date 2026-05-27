@@ -193,10 +193,15 @@ body {
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
-  opacity: 0.025;
+  opacity: 0;
   pointer-events: none;
   z-index: 0;
-  filter: blur(80px) saturate(1.2);
+  filter: blur(15px) saturate(1.2);
+  transition: opacity 700ms ease;
+}
+
+.token-hero-bg--loaded {
+  opacity: 0.25;
 }
 
 .scrollable::-webkit-scrollbar { width: 4px; }

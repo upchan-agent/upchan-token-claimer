@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useState, useMemo } from 'react';
-import { TOKENS, CHAINS, ipfsUrl } from '@/config/tokens';
+import { TOKENS, CHAINS } from '@/config/tokens';
 import { useUpProvider } from '@/providers/UpProvider';
 import { useViewMode } from '@/hooks/useViewMode';
 import { useTokenStatus } from '@/hooks/useTokenStatus';
@@ -10,11 +10,11 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { TokenSelector } from '@/components/token/TokenSelector';
 import { TokenCard } from '@/components/token/TokenCard';
+import { TokenBackground } from '@/components/token/TokenBackground';
 import { StatusCard } from '@/components/token/StatusCard';
 import { ActionCard } from '@/components/ActionCard';
 import { HoldersCard } from '@/components/token/HoldersCard';
 import { OwnerPanel } from '@/components/owner/OwnerPanel';
-import { useTokenOnChainData } from '@/hooks/useTokenMeta';
 
 export default function HomePage() {
   const params = useSearchParams();
@@ -41,7 +41,6 @@ export default function HomePage() {
 
   const st = useTokenStatus(displayToken, vm.displayAddress);
   const refresh = st.refetch;
-  const tokenMeta = useTokenOnChainData(displayToken);
 
   // Use UP's actual chain for display if available, else fallback to token config
   const chain = displayToken
@@ -59,13 +58,8 @@ export default function HomePage() {
 
   return (
     <div className={`app-shell${connectionSource !== 'grid' ? ' standalone' : ''}`}>
-      {/* C-1: Token image as decorative background */}
-      {tokenMeta.image && (
-        <div
-          className="token-hero-bg"
-          style={{ backgroundImage: `url(${ipfsUrl(tokenMeta.image)})` }}
-        />
-      )}
+      {/* C-1: Token image as decorative background — keyed to token so React remounts cleanly */}
+      {displayToken && <TokenBackground key={displayToken.proxy} token={displayToken} />}
       <Header onViewAddress={vm.setViewAddress} viewAddress={vm.viewAddress} />
 
       {/* Scrollable body */}

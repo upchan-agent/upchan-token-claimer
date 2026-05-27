@@ -21,8 +21,6 @@ function fmtSoulbound(s: TokenStatus): string {
 }
 import { useOwnerActions } from '@/hooks/useOwnerActions';
 import { useUpProvider } from '@/providers/UpProvider';
-import { EmojiText } from '../EmojiText';
-import { GateEditor } from './GateEditor';
 import { ConditionEditor, ConditionEditorData } from './ConditionEditor';
 import { useTxContext } from '@/providers/TxContext';
 

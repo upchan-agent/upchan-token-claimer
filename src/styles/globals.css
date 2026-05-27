@@ -11,7 +11,6 @@
      .app-*     → Layout / Shell
      .progress-*→ Progress bars
      .pill-*    → Segmented controls
-     .tip-*     → Tooltip (hover/click annotations)
      .anim-d*   → Staggered animations
    ═══════════════════════════════════════════════════════ */
 
@@ -267,15 +266,6 @@ body {
   color: var(--c-text-tertiary);
 }
 
-/* Micro Bold (12px, 600, -0.12px) */
-.text-micro-bold {
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.33;
-  letter-spacing: -0.01em;
-  color: var(--c-text);
-}
-
 /* Section Label (14px uppercase) */
 .section-label {
   font-size: 14px;
@@ -369,9 +359,6 @@ body {
   gap: var(--space-2xs);
 }
 
-/* Small card block: standalone use */
-.card-block--sm { min-height: 40px; }
-
 /* ─── Conditions area (inside card-block--xl) ─── */
 
 .conditions-area {
@@ -395,21 +382,6 @@ body {
   color: var(--c-text);
   display: block;
   margin-bottom: var(--space-2xs);
-}
-
-.conditions-divider {
-  height: 1px;
-  background: var(--c-border);
-  margin: var(--space-2xs) 0;
-}
-
-.conditions-placeholder {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.33;
-  letter-spacing: -0.01em;
-  color: var(--c-text-secondary);
-  margin: 0;
 }
 
 /* ─── Revokable token warning ─── */
@@ -446,22 +418,6 @@ body {
   letter-spacing: -0.01em;
   color: var(--c-text-secondary);
   text-align: center;
-}
-
-/* ─── Card Media (replaces .token-img-*) ─── */
-
-.card-media {
-  width: 88px;
-  height: 88px;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  position: relative;
-  background: transparent;
-}
-
-.card-media:hover {
-  transform: scale(1.03);
-  transition: transform 0.2s ease;
 }
 
 .card-media-img {
@@ -935,60 +891,6 @@ body {
   color: var(--c-text-tertiary);
 }
 
-/* ─── Status icons (replaces .prop-icon-*) ─── */
-
-.status-icon--yes {
-  color: var(--c-success);
-}
-
-.status-icon--no {
-  color: var(--c-error);
-}
-
-.status-icon--none {
-  color: var(--c-text-tertiary);
-}
-
-/* ─── Tooltip — CSS-only hover/click annotation ───
-     Usage: wrap text in .tip, add .tip-content as sibling.
-     Shows above on hover (and click via .is-active for mobile).
-     Right-aligned (right:0) — designed for data-value column.     */
-
-.tip {
-  position: relative;
-  cursor: help;
-}
-
-.tip-content {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 999;
-  bottom: calc(100% + 8px);
-  right: 0;
-  width: 200px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-  text-align: left;
-  white-space: normal;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  color: var(--c-text);
-  transition: opacity 0.15s;
-}
-
-.tip:hover .tip-content,
-.tip.is-active .tip-content {
-  visibility: visible;
-  opacity: 1;
-}
-
 /* ─── Status Message (unified state display) ─── */
 
 .status-message {
@@ -1041,13 +943,6 @@ body {
 }
 
 /* ─── Progress Bar ─── */
-
-.progress-track {
-  height: var(--space-2xs);
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: var(--radius-xs);
-  overflow: hidden;
-}
 
 .progress-fill {
   height: 100%;
@@ -1290,13 +1185,6 @@ select.owner-input {
 .owner-action-row > .owner-input {
   flex: 1;
   min-width: 120px;
-}
-
-.owner-gate-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
 }
 
 /* Token requirement rows */

@@ -35,7 +35,7 @@ interface Props {
 
 /**
  * Renders emoji characters as Fluent UI Emoji SVGs.
- * Only handles the 5 section emoji used in this app.
+ * Only handles the 7 section emoji used in this app.
  * Non-emoji text is rendered as normal text.
  */
 export function EmojiText({ children, className }: Props) {

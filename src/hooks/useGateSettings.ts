@@ -3,7 +3,6 @@
 import { useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useTxContext } from '../providers/TxContext';
-import { useUpProvider } from '../providers/UpProvider';
 
 const GATE_ABI = [
   'function followTarget() view returns (address)',
